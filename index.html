@@ -2,18 +2,31 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Where Beauty Blooms By Megan | Nail Tech</title>
-    <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <title>Where Beauty Blooms By Megan | Nail Artist</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <!-- Floating flowers -->
+    <div class="floating-flower flower1">🌸</div>
+    <div class="floating-flower flower2">🌹</div>
+    <div class="floating-flower flower3">💐</div>
+    <div class="floating-flower flower4">🌺</div>
+    <div class="floating-flower flower5">🌷</div>
+
     <header>
         <nav class="navbar">
             <div class="nav-container">
-                <h1 class="logo">Where Beauty Blooms By Megan</h1>
-                <div class="menu-toggle" id="mobile-menu">
+                <h1 class="logo">
+                    <span class="logo-flower">🌸</span>
+                    <span class="logo-text">Where Beauty Blooms</span>
+                    <span class="logo-by">by Megan</span>
+                </h1>
+                <div class="menu-toggle" id="mobile-menu" aria-label="Toggle menu">
                     <span class="bar"></span>
                     <span class="bar"></span>
                     <span class="bar"></span>
@@ -29,7 +42,7 @@
                         <a href="#gallery" class="nav-link">Gallery</a>
                     </li>
                     <li class="nav-item">
-                        <a href="#contact" class="nav-link">Contact</a>
+                        <a href="#contact" class="nav-link">Book Now</a>
                     </li>
                 </ul>
             </div>
@@ -37,107 +50,203 @@
     </header>
 
     <section id="home" class="hero">
+        <div class="hero-decor top-left">🌸</div>
+        <div class="hero-decor top-right">🌹</div>
+        <div class="hero-decor bottom-left">🌷</div>
+        <div class="hero-decor bottom-right">🌺</div>
         <div class="hero-content">
-            <h2>Where Beauty Blooms</h2>
-            <p>Beautiful nails by Megan - tailored for every occasion</p>
-            <a href="#contact" class="btn">Book Appointment</a>
+            <div class="hero-badge">✨ Nail Artist ✨</div>
+            <h2 class="hero-title">Where Beauty Blooms</h2>
+            <p class="hero-subtitle">Glamorous nails, blooming with elegance for every special moment</p>
+            <div class="hero-buttons">
+                <a href="#gallery" class="btn btn-primary">View My Work</a>
+                <a href="#contact" class="btn btn-secondary">Book Appointment</a>
+            </div>
+        </div>
+        <div class="scroll-indicator">
+            <span>Scroll</span>
+            <i class="fas fa-chevron-down"></i>
         </div>
     </section>
 
     <section id="services" class="services">
+        <div class="section-decor">🌸 🌹 🌷</div>
         <div class="container">
-            <h2 class="section-title">Our Services</h2>
+            <div class="section-header">
+                <span class="section-label">Services</span>
+                <h2 class="section-title">Blooming Beauties</h2>
+                <p class="section-subtitle">Pamper yourself with our luxurious nail treatments</p>
+            </div>
             <div class="services-grid">
                 <div class="service-card">
-                    <i class="fas fa-hand-sparkles"></i>
-                    <h3>Manicure</h3>
-                    <p>Classic and gel manicures with premium polish</p>
+                    <div class="service-icon">
+                        <i class="fas fa-hand-sparkles"></i>
+                    </div>
+                    <h3>Classic Manicure</h3>
+                    <p>Elegant and timeless with premium polish & care</p>
                     <span class="price">$25 - $40</span>
+                    <div class="card-shine"></div>
                 </div>
-                <div class="service-card">
-                    <i class="fas fa-spa"></i>
-                    <h3>Pedicure</h3>
-                    <p>Relaxing spa pedicures for soft, beautiful feet</p>
+                <div class="service-card featured">
+                    <div class="featured-badge">Popular</div>
+                    <div class="service-icon">
+                        <i class="fas fa-spa"></i>
+                    </div>
+                    <h3>Deluxe Pedicure</h3>
+                    <p>Relaxing spa treatment for silky smooth feet</p>
                     <span class="price">$30 - $45</span>
+                    <div class="card-shine"></div>
                 </div>
                 <div class="service-card">
-                    <i class="fas fa-gem"></i>
-                    <h3>Nail Art</h3>
-                    <p>Custom designs to make your nails stand out</p>
-                    <span class="price">$5 - $20</span>
+                    <div class="service-icon">
+                        <i class="fas fa-gem"></i>
+                    </div>
+                    <h3>Custom Nail Art</h3>
+                    <p>Hand-painted masterpieces to match your vibe</p>
+                    <span class="price">$5 - $25</span>
+                    <div class="card-shine"></div>
                 </div>
                 <div class="service-card">
-                    <i class="fas fa-magic"></i>
+                    <div class="service-icon">
+                        <i class="fas fa-magic"></i>
+                    </div>
                     <h3>Acrylics & Extensions</h3>
-                    <p>Long-lasting acrylic nails and extensions</p>
+                    <p>Stunning length & strength that lasts for weeks</p>
                     <span class="price">$40 - $65</span>
+                    <div class="card-shine"></div>
                 </div>
             </div>
         </div>
     </section>
 
     <section id="gallery" class="gallery">
+        <div class="section-decor">💐 🌺 🌹</div>
         <div class="container">
-            <h2 class="section-title">Our Work</h2>
+            <div class="section-header">
+                <span class="section-label">Portfolio</span>
+                <h2 class="section-title">A Garden Of Beauty</h2>
+                <p class="section-subtitle">Each set is a unique bloom</p>
+            </div>
             <div class="gallery-grid">
                 <div class="gallery-item">
-                    <img src="images/gallery-1.svg" alt="Nail Art Design 1">
+                    <img src="images/gallery-1.svg" alt="Floral Nail Art Design">
+                    <div class="gallery-overlay">
+                        <i class="fas fa-heart"></i>
+                    </div>
                 </div>
                 <div class="gallery-item">
-                    <img src="images/gallery-2.svg" alt="Nail Art Design 2">
+                    <img src="images/gallery-2.svg" alt="Elegant Nail Design">
+                    <div class="gallery-overlay">
+                        <i class="fas fa-heart"></i>
+                    </div>
                 </div>
                 <div class="gallery-item">
-                    <img src="images/gallery-3.svg" alt="Nail Art Design 3">
+                    <img src="images/gallery-3.svg" alt="Romantic Nail Art">
+                    <div class="gallery-overlay">
+                        <i class="fas fa-heart"></i>
+                    </div>
                 </div>
                 <div class="gallery-item">
-                    <img src="images/gallery-4.svg" alt="Nail Art Design 4">
+                    <img src="images/gallery-4.svg" alt="Spring Inspired Nails">
+                    <div class="gallery-overlay">
+                        <i class="fas fa-heart"></i>
+                    </div>
                 </div>
                 <div class="gallery-item">
-                    <img src="images/gallery-5.svg" alt="Nail Art Design 5">
+                    <img src="images/gallery-5.svg" alt="Chic Nail Design">
+                    <div class="gallery-overlay">
+                        <i class="fas fa-heart"></i>
+                    </div>
                 </div>
                 <div class="gallery-item">
-                    <img src="images/gallery-6.svg" alt="Nail Art Design 6">
+                    <img src="images/gallery-6.svg" alt="Dreamy Nail Art">
+                    <div class="gallery-overlay">
+                        <i class="fas fa-heart"></i>
+                    </div>
                 </div>
             </div>
         </div>
     </section>
 
     <section id="contact" class="contact">
+        <div class="section-decor">🌷 🌸 💐</div>
         <div class="container">
-            <h2 class="section-title">Book Your Appointment</h2>
+            <div class="section-header">
+                <span class="section-label">Get In Touch</span>
+                <h2 class="section-title">Book Your Bloom</h2>
+                <p class="section-subtitle">Let's create something beautiful together</p>
+            </div>
             <div class="contact-content">
-                <div class="contact-info">
-                    <h3>Get In Touch</h3>
+                <div class="contact-card">
+                    <h3><span class="heart">💖</span> Connect With Me</h3>
                     <div class="contact-item">
-                        <i class="fab fa-facebook"></i>
-                        <span><a href="https://www.facebook.com/p/Where-Beauty-Blooms-By-Megan-61572991575674/" target="_blank" style="color: inherit; text-decoration: none;">Where Beauty Blooms By Megan</a></span>
+                        <div class="contact-icon">
+                            <i class="fab fa-facebook-f"></i>
+                        </div>
+                        <div class="contact-details">
+                            <span class="contact-label">Facebook</span>
+                            <a href="https://www.facebook.com/p/Where-Beauty-Blooms-By-Megan-61572991575674/" target="_blank">Where Beauty Blooms By Megan</a>
+                        </div>
                     </div>
                     <div class="contact-item">
-                        <i class="fas fa-phone"></i>
-                        <span>Message via Facebook</span>
+                        <div class="contact-icon">
+                            <i class="fas fa-comments"></i>
+                        </div>
+                        <div class="contact-details">
+                            <span class="contact-label">Booking</span>
+                            <span>Message me on Facebook</span>
+                        </div>
                     </div>
                     <div class="contact-item">
-                        <i class="fas fa-map-marker-alt"></i>
-                        <span>Location - Message for details</span>
+                        <div class="contact-icon">
+                            <i class="fas fa-map-marker-alt"></i>
+                        </div>
+                        <div class="contact-details">
+                            <span class="contact-label">Location</span>
+                            <span>DM for address details</span>
+                        </div>
                     </div>
                     <div class="contact-item">
-                        <i class="fas fa-clock"></i>
-                        <span>By Appointment Only<br>Message to book</span>
+                        <div class="contact-icon">
+                            <i class="far fa-clock"></i>
+                        </div>
+                        <div class="contact-details">
+                            <span class="contact-label">Hours</span>
+                            <span>By Appointment Only</span>
+                        </div>
+                    </div>
+                    <div class="social-promo">
+                        <p>Follow for nail inspo! 💕</p>
+                        <div class="social-links">
+                            <a href="#" aria-label="Instagram" class="social-btn"><i class="fab fa-instagram"></i></a>
+                            <a href="https://www.facebook.com/p/Where-Beauty-Blooms-By-Megan-61572991575674/" aria-label="Facebook" target="_blank" class="social-btn"><i class="fab fa-facebook"></i></a>
+                            <a href="#" aria-label="TikTok" class="social-btn"><i class="fab fa-tiktok"></i></a>
+                        </div>
                     </div>
                 </div>
-                <div class="contact-form">
+                <div class="contact-card form-card">
+                    <h3><span class="heart">🌸</span> Send a Message</h3>
                     <form>
-                        <input type="text" placeholder="Your Name" required>
-                        <input type="tel" placeholder="Phone Number" required>
-                        <select required>
-                            <option value="">Select Service</option>
-                            <option value="manicure">Manicure</option>
-                            <option value="pedicure">Pedicure</option>
-                            <option value="nail-art">Nail Art</option>
-                            <option value="acrylics">Acrylics & Extensions</option>
-                        </select>
-                        <textarea placeholder="Special requests or preferred date/time" rows="4"></textarea>
-                        <button type="submit" class="btn">Send Message</button>
+                        <div class="form-group">
+                            <input type="text" placeholder="Your Beautiful Name" required>
+                        </div>
+                        <div class="form-group">
+                            <input type="tel" placeholder="Phone Number" required>
+                        </div>
+                        <div class="form-group">
+                            <select required>
+                                <option value="">Select Desired Service</option>
+                                <option value="manicure">Classic Manicure</option>
+                                <option value="pedicure">Deluxe Pedicure</option>
+                                <option value="nail-art">Custom Nail Art</option>
+                                <option value="acrylics">Acrylics & Extensions</option>
+                                <option value="other">Something Else</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <textarea placeholder="Tell me about your dream nails... preferred date, inspiration, etc." rows="5"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-full">Send Message <i class="fas fa-paper-plane"></i></button>
                     </form>
                 </div>
             </div>
@@ -145,12 +254,15 @@
     </section>
 
     <footer>
+        <div class="footer-decor">🌸 🌹 🌷 🌺 💐</div>
         <div class="container">
-            <p>&copy; 2026 Where Beauty Blooms By Megan. All rights reserved.</p>
-            <div class="social-links">
-                <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
-                <a href="https://www.facebook.com/p/Where-Beauty-Blooms-By-Megan-61572991575674/" aria-label="Facebook" target="_blank"><i class="fab fa-facebook"></i></a>
-                <a href="#" aria-label="TikTok"><i class="fab fa-tiktok"></i></a>
+            <div class="footer-content">
+                <div class="footer-logo">
+                    <span class="footer-flower">🌸</span>
+                    <span>Where Beauty Blooms By Megan</span>
+                </div>
+                <p class="footer-text">Made with love & blooming with beauty</p>
+                <p class="copyright">&copy; 2026 Where Beauty Blooms By Megan. All rights reserved.</p>
             </div>
         </div>
     </footer>
