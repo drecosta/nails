@@ -13,7 +13,12 @@
         <nav class="navbar">
             <div class="nav-container">
                 <h1 class="logo">Glam Nails</h1>
-                <ul class="nav-menu">
+                <div class="menu-toggle" id="mobile-menu">
+                    <span class="bar"></span>
+                    <span class="bar"></span>
+                    <span class="bar"></span>
+                </div>
+                <ul class="nav-menu" id="nav-menu">
                     <li class="nav-item">
                         <a href="#home" class="nav-link">Home</a>
                     </li>
@@ -50,7 +55,7 @@
                     <span class="price">$25 - $40</span>
                 </div>
                 <div class="service-card">
-                    <i class="fas fa-shoe-prints"></i>
+                    <i class="fas fa-spa"></i>
                     <h3>Pedicure</h3>
                     <p>Relaxing spa pedicures for soft, beautiful feet</p>
                     <span class="price">$30 - $45</span>
@@ -62,7 +67,7 @@
                     <span class="price">$5 - $20</span>
                 </div>
                 <div class="service-card">
-                    <i class="fas fa-plus-circle"></i>
+                    <i class="fas fa-magic"></i>
                     <h3>Acrylics & Extensions</h3>
                     <p>Long-lasting acrylic nails and extensions</p>
                     <span class="price">$40 - $65</span>
@@ -143,11 +148,29 @@
         <div class="container">
             <p>&copy; 2026 Glam Nails. All rights reserved.</p>
             <div class="social-links">
-                <a href="#"><i class="fab fa-instagram"></i></a>
-                <a href="#"><i class="fab fa-facebook"></i></a>
-                <a href="#"><i class="fab fa-tiktok"></i></a>
+                <a href="#" aria-label="Instagram"><i class="fab fa-instagram"></i></a>
+                <a href="#" aria-label="Facebook"><i class="fab fa-facebook"></i></a>
+                <a href="#" aria-label="TikTok"><i class="fab fa-tiktok"></i></a>
             </div>
         </div>
     </footer>
+
+    <script>
+        const mobileMenu = document.getElementById('mobile-menu');
+        const navMenu = document.getElementById('nav-menu');
+        const navLinks = document.querySelectorAll('.nav-link');
+
+        mobileMenu.addEventListener('click', () => {
+            mobileMenu.classList.toggle('active');
+            navMenu.classList.toggle('active');
+        });
+
+        navLinks.forEach(link => {
+            link.addEventListener('click', () => {
+                mobileMenu.classList.remove('active');
+                navMenu.classList.remove('active');
+            });
+        });
+    </script>
 </body>
 </html>
