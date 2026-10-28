@@ -793,9 +793,9 @@ section {
     width: 48px;
     height: 48px;
     background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-    color: white !important;
+    color: #ffffff !important;
     border-radius: 50%;
-    display: flex !important;
+    display: inline-flex !important;
     align-items: center;
     justify-content: center;
     text-decoration: none;
@@ -803,11 +803,17 @@ section {
     transition: all 0.3s ease;
     box-shadow: 0 6px 20px rgba(236, 72, 153, 0.3);
     -webkit-tap-highlight-color: transparent;
+    position: relative;
+    line-height: 1;
 }
 
 .social-btn i {
-    color: white !important;
-    display: inline-block !important;
+    color: #ffffff !important;
+    display: block !important;
+    font-size: 1.2rem !important;
+    width: auto !important;
+    height: auto !important;
+    line-height: 1 !important;
 }
 
 .social-btn:hover {
