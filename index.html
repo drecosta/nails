@@ -246,9 +246,15 @@
                             </select>
                         </div>
                         <div class="form-group">
-                            <textarea id="bookingMessage" placeholder="Tell me about your dream nails... preferred date, inspiration, etc." rows="5"></textarea>
+                            <input type="date" id="bookingDate" required>
                         </div>
-                        <button type="submit" class="btn btn-primary btn-full">Send Message <i class="fas fa-paper-plane"></i></button>
+                        <div class="form-group">
+                            <input type="time" id="bookingTime" required>
+                        </div>
+                        <div class="form-group">
+                            <textarea id="bookingMessage" placeholder="Tell me about your dream nails... inspiration, etc." rows="4"></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-full">Book Appointment <i class="fas fa-paper-plane"></i></button>
                     </form>
                     <div id="bookingSuccess" style="display:none; margin-top:1rem; padding:1rem; background:#d1fae5; color:#065f46; border-radius:12px; text-align:center;">
                         Booking request sent! I'll get back to you soon.
@@ -315,8 +321,10 @@
                     name: document.getElementById('bookingName').value,
                     phone: document.getElementById('bookingPhone').value,
                     service: document.getElementById('bookingService').value,
+                    requestedDate: document.getElementById('bookingDate').value,
+                    requestedTime: document.getElementById('bookingTime').value,
                     message: document.getElementById('bookingMessage').value,
-                    date: new Date().toISOString(),
+                    submittedAt: new Date().toISOString(),
                     status: 'pending'
                 };
                 
