@@ -793,15 +793,21 @@ section {
     width: 48px;
     height: 48px;
     background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-    color: white;
+    color: white !important;
     border-radius: 50%;
-    display: flex;
+    display: flex !important;
     align-items: center;
     justify-content: center;
     text-decoration: none;
     font-size: 1.2rem;
     transition: all 0.3s ease;
     box-shadow: 0 6px 20px rgba(236, 72, 153, 0.3);
+    -webkit-tap-highlight-color: transparent;
+}
+
+.social-btn i {
+    color: white !important;
+    display: inline-block !important;
 }
 
 .social-btn:hover {
