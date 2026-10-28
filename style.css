@@ -110,8 +110,7 @@ body {
 }
 
 .logo-flower {
-    font-size: 1.3em;
-    animation: bounce 2s ease-in-out infinite;
+    display: none;
 }
 
 @keyframes bounce {
@@ -708,7 +707,7 @@ section {
 
 .heart {
     font-size: 1.4em;
-    animation: heartbeat 2s ease-in-out infinite;
+    /* animation removed */
 }
 
 .contact-item {
