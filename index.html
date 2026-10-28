@@ -43,6 +43,9 @@
                     <li class="nav-item">
                         <a href="#contact" class="nav-link">Book Now</a>
                     </li>
+                    <li class="nav-item">
+                        <a href="admin.html" class="nav-link">Admin</a>
+                    </li>
                 </ul>
             </div>
         </nav>
@@ -225,28 +228,31 @@
                 </div>
                 <div class="contact-card form-card">
                     <h3>Send a Message</h3>
-                    <form>
+                    <form id="bookingForm">
                         <div class="form-group">
-                            <input type="text" placeholder="Your Beautiful Name" required>
+                            <input type="text" id="bookingName" placeholder="Your Beautiful Name" required>
                         </div>
                         <div class="form-group">
-                            <input type="tel" placeholder="Phone Number" required>
+                            <input type="tel" id="bookingPhone" placeholder="Phone Number" required>
                         </div>
                         <div class="form-group">
-                            <select required>
+                            <select id="bookingService" required>
                                 <option value="">Select Desired Service</option>
-                                <option value="manicure">Classic Manicure</option>
-                                <option value="pedicure">Deluxe Pedicure</option>
-                                <option value="nail-art">Custom Nail Art</option>
-                                <option value="acrylics">Acrylics & Extensions</option>
-                                <option value="other">Something Else</option>
+                                <option value="Classic Manicure">Classic Manicure</option>
+                                <option value="Deluxe Pedicure">Deluxe Pedicure</option>
+                                <option value="Custom Nail Art">Custom Nail Art</option>
+                                <option value="Acrylics & Extensions">Acrylics & Extensions</option>
+                                <option value="Something Else">Something Else</option>
                             </select>
                         </div>
                         <div class="form-group">
-                            <textarea placeholder="Tell me about your dream nails... preferred date, inspiration, etc." rows="5"></textarea>
+                            <textarea id="bookingMessage" placeholder="Tell me about your dream nails... preferred date, inspiration, etc." rows="5"></textarea>
                         </div>
                         <button type="submit" class="btn btn-primary btn-full">Send Message <i class="fas fa-paper-plane"></i></button>
                     </form>
+                    <div id="bookingSuccess" style="display:none; margin-top:1rem; padding:1rem; background:#d1fae5; color:#065f46; border-radius:12px; text-align:center;">
+                        Booking request sent! I'll get back to you soon.
+                    </div>
                 </div>
             </div>
         </div>
@@ -281,6 +287,47 @@
                 navMenu.classList.remove('active');
             });
         });
+    </script>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBuMawZjjzJum0fy9UPw3vqwfK19uSrM9w",
+            authDomain: "rsvp-7faf9.firebaseapp.com",
+            databaseURL: "https://rsvp-7faf9-default-rtdb.firebaseio.com",
+            projectId: "rsvp-7faf9",
+            storageBucket: "rsvp-7faf9.firebasestorage.app",
+            messagingSenderId: "657790462564",
+            appId: "1:657790462564:web:f3e2a230425c218c624d71"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        const bookingForm = document.getElementById('bookingForm');
+        if (bookingForm) {
+            bookingForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const booking = {
+                    name: document.getElementById('bookingName').value,
+                    phone: document.getElementById('bookingPhone').value,
+                    service: document.getElementById('bookingService').value,
+                    message: document.getElementById('bookingMessage').value,
+                    date: new Date().toISOString(),
+                    status: 'pending'
+                };
+                
+                const bookingsRef = ref(db, 'bookings');
+                const newBookingRef = push(bookingsRef);
+                await set(newBookingRef, booking);
+                
+                bookingForm.style.display = 'none';
+                document.getElementById('bookingSuccess').style.display = 'block';
+            });
+        }
     </script>
 </body>
 </html>
