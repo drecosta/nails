@@ -1,10 +1,9 @@
-const CACHE_NAME = 'wbbm-pwa-v1';
+const CACHE_NAME = 'wbbm-pwa-v2';
 const SCOPE = self.registration.scope;
 
 const CORE_ASSETS = [
   './',
   'index.html',
-  'admin.html',
   'style.css',
   'manifest.json',
   'icons/icon.svg',

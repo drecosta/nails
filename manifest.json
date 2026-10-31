@@ -51,12 +51,6 @@
       "short_name": "Book",
       "url": "./#contact",
       "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
-    },
-    {
-      "name": "Booking admin",
-      "short_name": "Admin",
-      "url": "./#admin",
-      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
     }
   ]
 }

@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
     <title>Where Beauty Blooms By Megan | Nail Artist</title>
-    <meta name="description" content="Nail art by Megan - browse services, view the gallery, book appointments, and manage your nail calendar in one app.">
+    <meta name="description" content="Nail art by Megan - browse services, view the gallery, and book your appointment.">
     <meta name="theme-color" content="#ec4899">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -21,8 +21,6 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <script>if (location.hash === '#admin') { document.body.classList.add('admin-mode'); }</script>
-    <div id="siteMain">
     <!-- Floating flowers -->
     <div class="floating-flower flower1"></div>
     <div class="floating-flower flower2"></div>
@@ -365,64 +363,10 @@
                     <span>Where Beauty Blooms By Megan</span>
                 </div>
                 <p class="footer-text">Made with love & blooming with beauty</p>
-                <p class="copyright">&copy; 2026 Where Beauty Blooms By Megan. All rights reserved. <a href="#admin" class="admin-link">Admin</a></p>
+                <p class="copyright">&copy; 2026 Where Beauty Blooms By Megan. All rights reserved.</p>
             </div>
         </div>
     </footer>
-    </div>
-
-    <section id="admin" class="admin-page" aria-label="Booking admin">
-        <div class="admin-topbar">
-            <div class="admin-brand">
-                <span class="admin-brand-title">Where Beauty Blooms</span>
-                <span class="admin-brand-sub">Booking Admin</span>
-            </div>
-            <a href="#home" class="admin-back"><i class="fas fa-arrow-left"></i> Back to site</a>
-        </div>
-
-        <div class="admin-content container">
-            <div class="admin-header">
-                <h1>Booking Admin</h1>
-                <p>View your nail calendar and manage every appointment in one place</p>
-            </div>
-
-            <div class="calendar-card">
-                <div class="calendar-head">
-                    <button type="button" class="calendar-nav" id="calPrev" aria-label="Previous month">
-                        <i class="fas fa-chevron-left"></i>
-                    </button>
-                    <h3 id="calTitle">Month</h3>
-                    <button type="button" class="calendar-nav" id="calNext" aria-label="Next month">
-                        <i class="fas fa-chevron-right"></i>
-                    </button>
-                </div>
-                <div class="calendar-weekdays" aria-hidden="true">
-                    <span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span>
-                </div>
-                <div class="calendar-grid" id="calendarGrid"></div>
-                <div class="calendar-legend">
-                    <span><i class="legend-dot legend-dot-booking"></i> Appointment</span>
-                    <span><i class="legend-dot legend-dot-today"></i> Today</span>
-                </div>
-            </div>
-
-            <div class="admin-actions">
-                <div class="booking-count" id="bookingCount">
-                    <i class="fas fa-calendar-check"></i> <span id="countText">0 Bookings</span>
-                </div>
-                <div class="admin-actions-buttons">
-                    <button type="button" class="btn btn-secondary btn-small" id="filterClear" hidden>
-                        <i class="fas fa-calendar-day"></i> All dates
-                    </button>
-                    <button type="button" class="btn btn-primary btn-small" id="clearAll">
-                        <i class="fas fa-trash"></i> Clear All
-                    </button>
-                </div>
-            </div>
-
-            <div id="bookingsList" class="bookings-container" aria-live="polite"></div>
-        </div>
-    </section>
 
     <script>
         const mobileMenu = document.getElementById('mobile-menu');
@@ -444,7 +388,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getDatabase, ref, push, set, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+        import { getDatabase, ref, push, set } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyBuMawZjjzJum0fy9UPw3vqwfK19uSrM9w",
@@ -458,322 +402,34 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getDatabase(app);
-        const bookingsRef = ref(db, 'bookings');
 
         const bookingForm = document.getElementById('bookingForm');
         if (bookingForm) {
             bookingForm.addEventListener('submit', async function(e) {
                 e.preventDefault();
-
+                
                 const booking = {
-                    name: document.getElementById('bookingName').value.trim(),
-                    phone: document.getElementById('bookingPhone').value.trim(),
+                    name: document.getElementById('bookingName').value,
+                    phone: document.getElementById('bookingPhone').value,
                     service: document.getElementById('bookingService').value,
                     requestedDate: document.getElementById('bookingDate').value,
                     requestedTime: document.getElementById('bookingTime').value,
-                    message: document.getElementById('bookingMessage').value.trim(),
+                    message: document.getElementById('bookingMessage').value,
                     submittedAt: new Date().toISOString(),
                     status: 'pending'
                 };
-
+                
+                const bookingsRef = ref(db, 'bookings');
                 const newBookingRef = push(bookingsRef);
                 await set(newBookingRef, booking);
-
+                
                 bookingForm.style.display = 'none';
                 document.getElementById('bookingSuccess').style.display = 'block';
             });
         }
+    </script>
 
-        const adminState = {
-            bookings: [],
-            loaded: false,
-            error: '',
-            monthCursor: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
-            selectedDate: null
-        };
-
-        const adminEls = {
-            list: document.getElementById('bookingsList'),
-            count: document.getElementById('countText'),
-            grid: document.getElementById('calendarGrid'),
-            title: document.getElementById('calTitle'),
-            filterClear: document.getElementById('filterClear'),
-            clearAll: document.getElementById('clearAll'),
-            prev: document.getElementById('calPrev'),
-            next: document.getElementById('calNext')
-        };
-
-        function escapeHtml(value) {
-            return String(value ?? '').replace(/[&<>"']/g, (ch) => ({
-                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-            }[ch]));
-        }
-
-        function dateKey(date) {
-            const year = date.getFullYear();
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const day = String(date.getDate()).padStart(2, '0');
-            return `${year}-${month}-${day}`;
-        }
-
-        function formatDisplayDate(key) {
-            if (!key) return 'Not set';
-            const [year, month, day] = key.split('-').map(Number);
-            if (!year || !month || !day) return key;
-            return new Date(year, month - 1, day).toLocaleDateString(undefined, {
-                weekday: 'short', year: 'numeric', month: 'short', day: 'numeric'
-            });
-        }
-
-        function formatTime(value) {
-            if (!value) return 'Not set';
-            const [hours, minutes] = value.split(':').map(Number);
-            if (Number.isNaN(hours)) return value;
-            const date = new Date();
-            date.setHours(hours, minutes || 0, 0, 0);
-            return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-        }
-
-        function statusMeta(status) {
-            if (status === 'confirmed') return { className: 'status-confirmed', text: 'Confirmed' };
-            if (status === 'completed') return { className: 'status-completed', text: 'Completed' };
-            return { className: 'status-pending', text: 'Pending' };
-        }
-
-        function renderCalendar() {
-            if (!adminEls.grid) return;
-
-            const { monthCursor, bookings, selectedDate } = adminState;
-            const year = monthCursor.getFullYear();
-            const month = monthCursor.getMonth();
-
-            adminEls.title.textContent = monthCursor.toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
-
-            const counts = {};
-            bookings.forEach((booking) => {
-                if (booking.requestedDate) {
-                    counts[booking.requestedDate] = (counts[booking.requestedDate] || 0) + 1;
-                }
-            });
-
-            const leading = (new Date(year, month, 1).getDay() + 6) % 7;
-            const daysInMonth = new Date(year, month + 1, 0).getDate();
-            const today = dateKey(new Date());
-
-            let html = '';
-            for (let i = 0; i < leading; i++) {
-                html += '<div class="calendar-day empty" aria-hidden="true"></div>';
-            }
-
-            for (let day = 1; day <= daysInMonth; day++) {
-                const key = dateKey(new Date(year, month, day));
-                const count = counts[key] || 0;
-                const classes = ['calendar-day'];
-                if (key === today) classes.push('is-today');
-                if (key === selectedDate) classes.push('selected');
-                if (count) classes.push('has-booking');
-                const label = `${formatDisplayDate(key)}${count ? `, ${count} appointment${count === 1 ? '' : 's'}` : ''}`;
-
-                html += `<button type="button" class="${classes.join(' ')}" data-date="${key}" aria-label="${label}">
-                    <span class="day-number">${day}</span>
-                    ${count ? `<span class="day-count">${count}</span>` : ''}
-                </button>`;
-            }
-
-            adminEls.grid.innerHTML = html;
-            adminEls.filterClear.hidden = !selectedDate;
-        }
-
-        function renderBookings() {
-            if (!adminEls.list) return;
-
-            const { bookings, loaded, error, selectedDate } = adminState;
-
-            if (!loaded) {
-                adminEls.count.textContent = 'Loading bookings...';
-                adminEls.list.innerHTML = '<div class="empty-state"><i class="fas fa-spinner fa-spin"></i><h3>Loading bookings</h3><p>Fetching your latest appointments.</p></div>';
-                return;
-            }
-
-            if (error) {
-                adminEls.count.textContent = 'Bookings unavailable';
-                adminEls.list.innerHTML = `<div class="empty-state"><i class="fas fa-triangle-exclamation"></i><h3>Could not load bookings</h3><p>${escapeHtml(error)}</p></div>`;
-                return;
-            }
-
-            const filtered = selectedDate
-                ? bookings.filter((booking) => booking.requestedDate === selectedDate)
-                : bookings;
-
-            adminEls.count.textContent = `${bookings.length} Booking${bookings.length === 1 ? '' : 's'}${selectedDate ? ` · ${filtered.length} on ${formatDisplayDate(selectedDate)}` : ''}`;
-
-            if (!filtered.length) {
-                adminEls.list.innerHTML = `<div class="empty-state">
-                    <i class="fas fa-inbox"></i>
-                    <h3>${selectedDate ? 'No bookings on this date' : 'No Bookings Yet'}</h3>
-                    <p>${selectedDate ? 'Choose another day or show all dates.' : 'When someone submits a booking form, it will appear here.'}</p>
-                </div>`;
-                return;
-            }
-
-            adminEls.list.innerHTML = filtered.map((booking) => {
-                const status = statusMeta(booking.status);
-                const submitted = booking.submittedAt && !Number.isNaN(Date.parse(booking.submittedAt))
-                    ? new Date(booking.submittedAt).toLocaleString()
-                    : '—';
-
-                return `
-                    <div class="booking-card">
-                        <div class="booking-header">
-                            <div>
-                                <h3>${escapeHtml(booking.name || 'Unnamed')}</h3>
-                                <span class="booking-id">ID: ${escapeHtml(booking.id)}</span>
-                            </div>
-                            <span class="booking-status ${status.className}">${status.text}</span>
-                        </div>
-
-                        <div class="booking-details">
-                            <div class="booking-detail">
-                                <span class="booking-detail-label"><i class="fas fa-calendar-day"></i> Appointment</span>
-                                <span class="booking-detail-value">${escapeHtml(formatDisplayDate(booking.requestedDate))}</span>
-                            </div>
-                            <div class="booking-detail">
-                                <span class="booking-detail-label"><i class="fas fa-clock"></i> Time</span>
-                                <span class="booking-detail-value">${escapeHtml(formatTime(booking.requestedTime))}</span>
-                            </div>
-                            <div class="booking-detail">
-                                <span class="booking-detail-label"><i class="fas fa-phone"></i> Phone</span>
-                                <span class="booking-detail-value">${escapeHtml(booking.phone || '—')}</span>
-                            </div>
-                            <div class="booking-detail">
-                                <span class="booking-detail-label"><i class="fas fa-spa"></i> Service</span>
-                                <span class="booking-detail-value">${escapeHtml(booking.service || '—')}</span>
-                            </div>
-                            <div class="booking-detail">
-                                <span class="booking-detail-label"><i class="fas fa-paper-plane"></i> Submitted</span>
-                                <span class="booking-detail-value">${escapeHtml(submitted)}</span>
-                            </div>
-                        </div>
-
-                        ${booking.message ? `
-                            <div class="booking-message">
-                                <span class="booking-message-label"><i class="fas fa-comment"></i> Message</span>
-                                <div class="booking-message-content">${escapeHtml(booking.message)}</div>
-                            </div>
-                        ` : ''}
-
-                        <div class="booking-actions">
-                            <button type="button" class="btn btn-primary btn-small" data-action="confirmed" data-id="${escapeHtml(booking.id)}">
-                                <i class="fas fa-check"></i> Confirm
-                            </button>
-                            <button type="button" class="btn btn-secondary btn-small btn-complete" data-action="completed" data-id="${escapeHtml(booking.id)}">
-                                <i class="fas fa-check-double"></i> Complete
-                            </button>
-                            <button type="button" class="btn btn-secondary btn-small btn-danger" data-action="delete" data-id="${escapeHtml(booking.id)}">
-                                <i class="fas fa-trash"></i> Delete
-                            </button>
-                        </div>
-                    </div>
-                `;
-            }).join('');
-        }
-
-        function renderAdmin() {
-            renderCalendar();
-            renderBookings();
-        }
-
-        function shiftMonth(delta) {
-            adminState.monthCursor = new Date(
-                adminState.monthCursor.getFullYear(),
-                adminState.monthCursor.getMonth() + delta,
-                1
-            );
-            adminState.selectedDate = null;
-            renderAdmin();
-        }
-
-        if (adminEls.list) {
-            onValue(bookingsRef, (snapshot) => {
-                adminState.bookings = [];
-                snapshot.forEach((child) => {
-                    adminState.bookings.push({ id: child.key, ...child.val() });
-                });
-                adminState.bookings.sort((a, b) => {
-                    const aKey = `${a.requestedDate || ''} ${a.requestedTime || ''}`;
-                    const bKey = `${b.requestedDate || ''} ${b.requestedTime || ''}`;
-                    return aKey.localeCompare(bKey);
-                });
-                adminState.loaded = true;
-                adminState.error = '';
-                renderAdmin();
-            }, (err) => {
-                adminState.loaded = true;
-                adminState.error = err.message;
-                renderAdmin();
-            });
-
-            adminEls.grid.addEventListener('click', (event) => {
-                const day = event.target.closest('.calendar-day[data-date]');
-                if (!day) return;
-                const key = day.dataset.date;
-                adminState.selectedDate = adminState.selectedDate === key ? null : key;
-                renderAdmin();
-            });
-
-            adminEls.prev.addEventListener('click', () => shiftMonth(-1));
-            adminEls.next.addEventListener('click', () => shiftMonth(1));
-
-            adminEls.filterClear.addEventListener('click', () => {
-                adminState.selectedDate = null;
-                renderAdmin();
-            });
-
-            adminEls.clearAll.addEventListener('click', async () => {
-                if (!adminState.bookings.length) return;
-                if (!confirm('Clear all bookings? This cannot be undone.')) return;
-                try {
-                    await remove(bookingsRef);
-                } catch (err) {
-                    alert('Could not clear bookings: ' + err.message);
-                }
-            });
-
-            adminEls.list.addEventListener('click', async (event) => {
-                const button = event.target.closest('button[data-action]');
-                if (!button) return;
-
-                const { action, id } = button.dataset;
-                if (!id) return;
-
-                if (action === 'delete' && !confirm('Delete this booking?')) return;
-
-                button.disabled = true;
-                try {
-                    if (action === 'delete') {
-                        await remove(ref(db, `bookings/${id}`));
-                    } else {
-                        await update(ref(db, `bookings/${id}`), { status: action });
-                    }
-                } catch (err) {
-                    alert('Could not update booking: ' + err.message);
-                    button.disabled = false;
-                }
-            });
-        }
-
-        function applyAdminRoute() {
-            const isAdmin = location.hash === '#admin';
-            document.body.classList.toggle('admin-mode', isAdmin);
-            if (isAdmin) {
-                window.scrollTo(0, 0);
-                renderAdmin();
-            }
-        }
-
-        window.addEventListener('hashchange', applyAdminRoute);
-        applyAdminRoute();
-
+    <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('sw.js').catch((err) => {
