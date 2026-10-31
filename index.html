@@ -336,11 +336,19 @@
                                 <option value="Something Else">Something Else</option>
                             </select>
                         </div>
-                        <div class="form-group">
-                            <input type="date" id="bookingDate" required>
+                        <div class="form-group datetime-field">
+                            <div class="datetime-display" id="bookingDateDisplay" aria-hidden="true">
+                                <i class="far fa-calendar"></i>
+                                <span class="datetime-text">Select appointment date</span>
+                            </div>
+                            <input type="date" id="bookingDate" required aria-label="Appointment date">
                         </div>
-                        <div class="form-group">
-                            <input type="time" id="bookingTime" required>
+                        <div class="form-group datetime-field">
+                            <div class="datetime-display" id="bookingTimeDisplay" aria-hidden="true">
+                                <i class="far fa-clock"></i>
+                                <span class="datetime-text">Select appointment time</span>
+                            </div>
+                            <input type="time" id="bookingTime" required aria-label="Appointment time">
                         </div>
                         <div class="form-group">
                             <textarea id="bookingMessage" placeholder="Tell me about your dream nails... inspiration, etc." rows="4"></textarea>
@@ -384,6 +392,60 @@
                 navMenu.classList.remove('active');
             });
         });
+
+        function setupDateTimeField(inputId, displayId, placeholder, formatter) {
+            const input = document.getElementById(inputId);
+            const display = document.getElementById(displayId);
+            if (!input || !display) return;
+
+            const field = input.closest('.datetime-field');
+            const text = display.querySelector('.datetime-text');
+            if (!field || !text) return;
+
+            if (typeof input.showPicker === 'function') {
+                field.classList.add('supports-picker');
+                input.addEventListener('click', () => {
+                    try {
+                        input.showPicker();
+                    } catch (err) {
+                        field.classList.remove('supports-picker');
+                    }
+                });
+            }
+
+            const refresh = () => {
+                if (input.value) {
+                    text.textContent = formatter(input.value);
+                    display.classList.add('has-value');
+                } else {
+                    text.textContent = placeholder;
+                    display.classList.remove('has-value');
+                }
+            };
+
+            input.addEventListener('change', refresh);
+            input.addEventListener('input', refresh);
+            refresh();
+        }
+
+        function formatDateChoice(value) {
+            const [year, month, day] = value.split('-').map(Number);
+            if (!year || !month || !day) return value;
+            return new Date(year, month - 1, day).toLocaleDateString(undefined, {
+                weekday: 'short', day: 'numeric', month: 'short', year: 'numeric'
+            });
+        }
+
+        function formatTimeChoice(value) {
+            const [hours, minutes] = value.split(':').map(Number);
+            if (Number.isNaN(hours)) return value;
+            const date = new Date();
+            date.setHours(hours, minutes || 0, 0, 0);
+            return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+        }
+
+        setupDateTimeField('bookingDate', 'bookingDateDisplay', 'Select appointment date', formatDateChoice);
+        setupDateTimeField('bookingTime', 'bookingTimeDisplay', 'Select appointment time', formatTimeChoice);
     </script>
 
     <script type="module">

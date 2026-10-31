@@ -6,6 +6,7 @@
 }
 
 :root {
+    color-scheme: only light;
     --primary: #ec4899;
     --primary-light: #f9a8d4;
     --primary-dark: #be185d;
@@ -828,6 +829,73 @@ section {
 
 .form-group {
     margin-bottom: 1.2rem;
+}
+
+.datetime-field {
+    position: relative;
+}
+
+.datetime-display {
+    display: none;
+    align-items: center;
+    gap: 0.7rem;
+    width: 100%;
+    min-height: 54px;
+    padding: 14px 18px;
+    border: 2px solid #fce7f3;
+    border-radius: 14px;
+    background: #fef7f7;
+    color: #a78bfa;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+}
+
+.datetime-field.supports-picker .datetime-display {
+    display: flex;
+}
+
+.datetime-display i {
+    color: var(--primary);
+    font-size: 1.05rem;
+    flex-shrink: 0;
+}
+
+.datetime-display.has-value {
+    color: var(--text-dark);
+    font-weight: 500;
+}
+
+.datetime-field:focus-within .datetime-display {
+    border-color: var(--primary);
+    background: white;
+    box-shadow: 0 0 0 4px rgba(236, 72, 153, 0.1);
+    transform: translateY(-2px);
+}
+
+.datetime-field.supports-picker input[type="date"],
+.datetime-field.supports-picker input[type="time"] {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    border: 0;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.contact-card form input[type="date"],
+.contact-card form input[type="time"] {
+    color-scheme: only light;
+    color: var(--text-dark);
+    -webkit-text-fill-color: var(--text-dark);
+    min-height: 54px;
+}
+
+.contact-card form input[type="date"]::-webkit-datetime-edit,
+.contact-card form input[type="time"]::-webkit-datetime-edit {
+    color: var(--text-dark);
+    -webkit-text-fill-color: var(--text-dark);
 }
 
 .contact-card form input,
