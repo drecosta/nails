@@ -339,14 +339,16 @@
                         <div class="form-group datetime-field">
                             <div class="datetime-display" id="bookingDateDisplay" aria-hidden="true">
                                 <i class="far fa-calendar"></i>
-                                <span class="datetime-text">Select appointment date</span>
+                                <span class="datetime-label">Date</span>
+                                <span class="datetime-text">Select</span>
                             </div>
                             <input type="date" id="bookingDate" required aria-label="Appointment date">
                         </div>
                         <div class="form-group datetime-field">
                             <div class="datetime-display" id="bookingTimeDisplay" aria-hidden="true">
                                 <i class="far fa-clock"></i>
-                                <span class="datetime-text">Select appointment time</span>
+                                <span class="datetime-label">Time</span>
+                                <span class="datetime-text">Select</span>
                             </div>
                             <input type="time" id="bookingTime" required aria-label="Appointment time">
                         </div>
@@ -375,6 +377,19 @@
             </div>
         </div>
     </footer>
+
+    <div class="booking-overlay" id="bookingOverlay" role="dialog" aria-modal="true" aria-labelledby="bookingOverlayTitle" aria-describedby="bookingOverlayText" aria-hidden="true">
+        <div class="booking-overlay-card">
+            <div class="booking-overlay-icon" aria-hidden="true">
+                <span class="booking-spinner"></span>
+                <i class="fas fa-circle-check booking-state-icon booking-success-icon"></i>
+                <i class="fas fa-circle-exclamation booking-state-icon booking-error-icon"></i>
+            </div>
+            <h3 id="bookingOverlayTitle">Booking your appointment...</h3>
+            <p id="bookingOverlayText">Please wait a moment while we send your request.</p>
+            <button type="button" class="btn btn-primary" id="bookingOverlayButton">Done</button>
+        </div>
+    </div>
 
     <script>
         const mobileMenu = document.getElementById('mobile-menu');
@@ -444,8 +459,8 @@
             return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
         }
 
-        setupDateTimeField('bookingDate', 'bookingDateDisplay', 'Select appointment date', formatDateChoice);
-        setupDateTimeField('bookingTime', 'bookingTimeDisplay', 'Select appointment time', formatTimeChoice);
+        setupDateTimeField('bookingDate', 'bookingDateDisplay', 'Select', formatDateChoice);
+        setupDateTimeField('bookingTime', 'bookingTimeDisplay', 'Select', formatTimeChoice);
     </script>
 
     <script type="module">
@@ -467,9 +482,54 @@
 
         const bookingForm = document.getElementById('bookingForm');
         if (bookingForm) {
+            const submitButton = bookingForm.querySelector('button[type="submit"]');
+            const originalButtonHTML = submitButton.innerHTML;
+            const overlay = document.getElementById('bookingOverlay');
+            const overlayTitle = document.getElementById('bookingOverlayTitle');
+            const overlayText = document.getElementById('bookingOverlayText');
+            const overlayButton = document.getElementById('bookingOverlayButton');
+            let isSubmitting = false;
+
+            function showBookingOverlay(state, title, text, buttonLabel) {
+                overlay.dataset.state = state;
+                overlayTitle.textContent = title;
+                overlayText.textContent = text;
+                overlayButton.textContent = buttonLabel || '';
+                overlayButton.classList.toggle('is-visible', Boolean(buttonLabel));
+                overlay.classList.add('is-open');
+                overlay.setAttribute('aria-hidden', 'false');
+            }
+
+            function hideBookingOverlay() {
+                overlay.classList.remove('is-open');
+                overlay.setAttribute('aria-hidden', 'true');
+            }
+
+            overlayButton.addEventListener('click', () => {
+                if (overlay.dataset.state === 'error') {
+                    hideBookingOverlay();
+                    isSubmitting = false;
+                    submitButton.disabled = false;
+                    submitButton.innerHTML = originalButtonHTML;
+                    return;
+                }
+                hideBookingOverlay();
+            });
+
             bookingForm.addEventListener('submit', async function(e) {
                 e.preventDefault();
-                
+                if (isSubmitting) return;
+
+                isSubmitting = true;
+                submitButton.disabled = true;
+                submitButton.innerHTML = 'Sending... <i class="fas fa-spinner fa-spin"></i>';
+                showBookingOverlay(
+                    'loading',
+                    'Booking your appointment...',
+                    "Please wait a moment while we send your request. Slow connections can take a little longer, so please don't tap again.",
+                    null
+                );
+
                 const booking = {
                     name: document.getElementById('bookingName').value,
                     phone: document.getElementById('bookingPhone').value,
@@ -480,13 +540,31 @@
                     submittedAt: new Date().toISOString(),
                     status: 'pending'
                 };
-                
-                const bookingsRef = ref(db, 'bookings');
-                const newBookingRef = push(bookingsRef);
-                await set(newBookingRef, booking);
-                
-                bookingForm.style.display = 'none';
-                document.getElementById('bookingSuccess').style.display = 'block';
+
+                try {
+                    const bookingsRef = ref(db, 'bookings');
+                    const newBookingRef = push(bookingsRef);
+                    await set(newBookingRef, booking);
+
+                    bookingForm.style.display = 'none';
+                    document.getElementById('bookingSuccess').style.display = 'block';
+
+                    const firstName = booking.name.trim().split(/\s+/)[0] || 'there';
+                    showBookingOverlay(
+                        'success',
+                        'Appointment requested!',
+                        `Thank you, ${firstName}! I'll contact you soon to confirm your appointment.`,
+                        'Done'
+                    );
+                } catch (error) {
+                    console.error('Booking failed:', error);
+                    showBookingOverlay(
+                        'error',
+                        'Something went wrong',
+                        'We could not send your request. Please check your connection and try again.',
+                        'Try again'
+                    );
+                }
             });
         }
     </script>

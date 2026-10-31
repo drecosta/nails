@@ -1,4 +1,4 @@
-const CACHE_NAME = 'wbbm-pwa-v3';
+const CACHE_NAME = 'wbbm-pwa-v4';
 const SCOPE = self.registration.scope;
 
 const CORE_ASSETS = [
