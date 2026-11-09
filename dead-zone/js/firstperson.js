@@ -62,9 +62,14 @@ function fogged(rgb, distance) {
   );
 }
 
-function drawZombieSprite(ctx, W, H, type, dir, frame, variant, chase) {
+function drawZombieSprite(ctx, W, H, type, dir, frame, variant, chase, pose = 'walk') {
   const def = ZOMBIE_TYPES[type] || ZOMBIE_TYPES.walker;
   const low = type === 'crawler';
+  const dead = pose.indexOf('dead') === 0;
+  const deadStage = dead ? Number(pose.slice(4)) || 0 : 0;
+  const windStage = pose.indexOf('wind') === 0 ? Number(pose.slice(4)) || 1 : 0;
+  const strike = pose === 'strike';
+  const walking = pose === 'walk';
   const skin = shade(def.skin, (variant - 1) * 9);
   const skinDark = shade(skin, -24);
   const cloth = shade(def.color, (variant - 1) * 11);
@@ -72,11 +77,41 @@ function drawZombieSprite(ctx, W, H, type, dir, frame, variant, chase) {
   const blood = '#592b28';
   const side = Math.sin(dir * Math.PI / 4);
   const front = Math.cos(dir * Math.PI / 4);
-  const swing = frame ? 1 : -1;
+  const stride = walking ? Math.sin((frame / 4) * PI2) : 0;
+  const strideAbs = Math.abs(stride);
+  const sway = walking ? Math.cos((frame / 4) * PI2) : 0;
+  const bodyBob = strideAbs * H * 0.012;
+  const eyeCol = windStage || strike ? '#ff9d63' : '#221e18';
+  const mouthOpen = chase || windStage || strike;
+
+  if (dead) {
+    const ground = H - 1;
+    const heapY = ground - H * (0.05 + (1 - Math.min(1, deadStage)) * 0.04);
+    ctx.fillStyle = 'rgba(78, 25, 23, 0.55)';
+    ctx.beginPath();
+    ctx.ellipse(W * 0.5, ground - 1, W * 0.4, H * 0.065, 0, 0, PI2);
+    ctx.fill();
+    ctx.fillStyle = clothDark;
+    ctx.beginPath();
+    ctx.ellipse(W * 0.48 + side * W * 0.07, heapY - H * 0.04, W * 0.36, H * 0.13, side * 0.3, 0, PI2);
+    ctx.fill();
+    rect(ctx, W * 0.23, heapY - H * 0.08, W * 0.48, H * 0.09, cloth);
+    rect(ctx, W * 0.27, heapY - H * 0.055, W * 0.19, H * 0.045, skinDark);
+    const hx = W * (0.65 + side * 0.07);
+    circle(ctx, hx, heapY - H * 0.075, W * 0.13, skin);
+    rect(ctx, hx - W * 0.06, heapY - H * 0.09, W * 0.035, H * 0.025, '#241f1a');
+    rect(ctx, hx + W * 0.025, heapY - H * 0.09, W * 0.035, H * 0.025, '#241f1a');
+    rect(ctx, hx - W * 0.04, heapY - H * 0.035, W * 0.08, H * 0.018, '#4a1f1e');
+    limb(ctx, W * 0.32, heapY - H * 0.02, W * 0.12, ground - 2, W * 0.07, skinDark);
+    limb(ctx, W * 0.59, heapY - H * 0.02, W * 0.8, ground - 2, W * 0.06, skin);
+    rect(ctx, W * 0.38, heapY - H * 0.02, W * 0.14, H * 0.045, blood);
+    return;
+  }
 
   if (low) {
-    const bodyY = H * 0.62;
-    circle(ctx, W * 0.5, H - 2, W * 0.3, 'rgba(0,0,0,0)');
+    const bodyY = H * 0.64 + bodyBob * 0.45;
+    const lunge = strike ? W * 0.09 : windStage ? -W * 0.06 : 0;
+    const crawl = stride * W * 0.05;
     ctx.fillStyle = clothDark;
     ctx.beginPath();
     ctx.ellipse(W * 0.5, bodyY, W * 0.33, H * 0.19, 0.08 + side * 0.15, 0, PI2);
@@ -84,33 +119,41 @@ function drawZombieSprite(ctx, W, H, type, dir, frame, variant, chase) {
     rect(ctx, W * 0.2, bodyY - H * 0.08, W * 0.6, H * 0.24, cloth);
     rect(ctx, W * 0.24, bodyY + H * 0.09, W * 0.25, H * 0.12, skinDark);
     rect(ctx, W * 0.5, bodyY + H * 0.1, W * 0.26, H * 0.11, skin);
-    const hx = W * (0.5 + side * 0.24);
-    circle(ctx, hx, bodyY - H * 0.11, W * 0.15, skin);
-    circle(ctx, hx + W * 0.07, bodyY - H * 0.13, W * 0.025, '#241f1a');
+    const hx = W * (0.5 + side * 0.24) + lunge;
+    circle(ctx, hx, bodyY - H * 0.11 - (windStage ? H * 0.02 : 0), W * 0.15, skin);
+    rect(ctx, hx - W * 0.06, bodyY - H * 0.145, W * 0.04, H * 0.025, eyeCol);
+    rect(ctx, hx + W * 0.035, bodyY - H * 0.145, W * 0.04, H * 0.025, eyeCol);
+    if (mouthOpen) rect(ctx, hx - W * 0.055, bodyY - H * 0.07, W * 0.11, H * 0.025, '#3f1918');
     rect(ctx, W * 0.32, bodyY - H * 0.03, W * 0.16, H * 0.08, blood);
-    limb(ctx, W * 0.35, bodyY + H * 0.03, W * 0.13, H - 2, W * 0.08, skinDark);
-    limb(ctx, W * 0.67, bodyY + H * 0.03, W * 0.87, H - 2, W * 0.08, skin);
+    limb(ctx, W * 0.35, bodyY + H * 0.03, W * 0.13 + crawl, H - 2, W * 0.08, skinDark);
+    limb(ctx, W * 0.67, bodyY + H * 0.03, W * 0.87 - crawl, H - 2, W * 0.08, skin);
+    limb(ctx, W * 0.4, bodyY + H * 0.06, W * 0.25 + crawl + (strike ? W * 0.11 : 0), H - H * 0.1, W * 0.055, skin);
+    limb(ctx, W * 0.61, bodyY + H * 0.07, W * 0.78 - crawl - (strike ? W * 0.11 : 0), H - H * 0.08, W * 0.055, skinDark);
     return;
   }
 
-  const lean = type === 'runner' ? W * 0.04 : 0;
+  const runner = type === 'runner';
+  const brute = type === 'brute';
   const ground = H - 1;
-  const legH = H * (type === 'brute' ? 0.29 : 0.31);
-  const torsoH = H * (type === 'brute' ? 0.36 : 0.33);
-  const torsoTop = ground - legH - torsoH;
+  const legH = H * (brute ? 0.29 : 0.31);
+  const torsoH = H * (brute ? 0.36 : 0.33);
+  const hunch = chase ? H * 0.018 : 0;
+  const torsoTop = ground - legH - torsoH - bodyBob + hunch;
   const shoulder = torsoTop + torsoH * 0.15;
-  const headW = W * (type === 'brute' ? 0.31 : 0.26);
+  const headW = W * (brute ? 0.31 : 0.26);
   const headH = headW * 0.96;
-  const headX = W * 0.5 + side * W * 0.05 + lean;
-  const headY = torsoTop - headH * 0.78;
+  const lean = (runner ? W * 0.05 : 0) + (chase ? W * 0.025 : 0) +
+    (strike ? W * 0.09 : 0) - (windStage ? W * 0.035 : 0);
+  const headX = W * 0.5 + side * W * 0.05 + lean + sway * W * 0.012;
+  const headY = torsoTop - headH * 0.78 + (windStage ? -H * 0.018 : strike ? H * 0.025 : 0);
 
   ctx.fillStyle = clothDark;
-  const legW = W * (type === 'brute' ? 0.14 : 0.115);
-  const legStep = swing * W * 0.045;
+  const legW = W * (brute ? 0.14 : 0.115);
+  const legStep = stride * W * (runner ? 0.075 : 0.045);
   rect(ctx, W * 0.5 - legW * 1.6, ground - legH, legW, legH + legStep, shade(cloth, -32));
   rect(ctx, W * 0.5 + legW * 0.55, ground - legH, legW, legH - legStep, shade(cloth, -22));
-  rect(ctx, W * 0.5 - legW * 1.75, ground - H * 0.045, legW * 1.3, H * 0.055, '#25251e');
-  rect(ctx, W * 0.5 + legW * 0.5, ground - H * 0.045, legW * 1.3, H * 0.055, '#25251e');
+  rect(ctx, W * 0.5 - legW * 1.75, ground - H * 0.045 + Math.max(0, -legStep), legW * 1.3, H * 0.055, '#25251e');
+  rect(ctx, W * 0.5 + legW * 0.5, ground - H * 0.045 + Math.max(0, legStep), legW * 1.3, H * 0.055, '#25251e');
 
   rect(ctx, W * 0.5 - W * 0.17, torsoTop, W * 0.34, torsoH, cloth);
   rect(ctx, W * 0.5 - W * 0.17, torsoTop, W * 0.1, torsoH, clothDark);
@@ -124,21 +167,37 @@ function drawZombieSprite(ctx, W, H, type, dir, frame, variant, chase) {
     [W * 0.61, torsoTop + torsoH],
     [W * 0.68, torsoTop + torsoH * 0.56]
   ], cloth);
-  if (type === 'brute') {
+  if (brute) {
     circle(ctx, W * 0.32, torsoTop + torsoH * 0.22, W * 0.1, shade(cloth, 12));
     circle(ctx, W * 0.68, torsoTop + torsoH * 0.22, W * 0.1, shade(cloth, 12));
   }
   rect(ctx, W * 0.4, torsoTop + torsoH * 0.32, W * 0.12, torsoH * 0.15, blood);
   rect(ctx, W * 0.56, torsoTop + torsoH * 0.57, W * 0.07, torsoH * 0.12, '#4b2422');
+  if (windStage) {
+    rect(ctx, W * 0.36, torsoTop + torsoH * 0.6, W * 0.28, torsoH * 0.12, '#3a201e');
+  }
 
-  if (front > 0.1) {
-    limb(ctx, W * 0.34, shoulder, W * 0.18, shoulder + H * 0.22, W * (type === 'brute' ? 0.13 : 0.1), skinDark);
-    limb(ctx, W * 0.66, shoulder, W * 0.82, shoulder + H * 0.2, W * (type === 'brute' ? 0.13 : 0.1), skin);
-    circle(ctx, W * 0.16, shoulder + H * 0.23, W * 0.055, skinDark);
-    circle(ctx, W * 0.84, shoulder + H * 0.21, W * 0.055, skin);
+  const armW = W * (brute ? 0.13 : 0.1);
+  if (windStage) {
+    limb(ctx, W * 0.34, shoulder, W * 0.18, shoulder - H * 0.05, armW, skinDark);
+    limb(ctx, W * 0.66, shoulder, W * 0.82, shoulder - H * 0.03, armW, skin);
+    circle(ctx, W * 0.16, shoulder - H * 0.045, W * 0.058, skinDark);
+    circle(ctx, W * 0.84, shoulder - H * 0.025, W * 0.058, skin);
+  } else if (strike) {
+    const reach = W * (brute ? 0.48 : 0.42);
+    limb(ctx, W * 0.4, shoulder + torsoH * 0.12, W * 0.5 - reach, shoulder + H * 0.23, armW, skinDark);
+    limb(ctx, W * 0.6, shoulder + torsoH * 0.12, W * 0.5 + reach, shoulder + H * 0.21, armW, skin);
+    circle(ctx, W * 0.5 - reach, shoulder + H * 0.235, W * 0.06, skinDark);
+    circle(ctx, W * 0.5 + reach, shoulder + H * 0.215, W * 0.06, skin);
+  } else if (front > 0.1) {
+    const armSwing = stride * W * 0.025;
+    limb(ctx, W * 0.34, shoulder, W * 0.18 + armSwing, shoulder + H * 0.22, armW, skinDark);
+    limb(ctx, W * 0.66, shoulder, W * 0.82 - armSwing, shoulder + H * 0.2, armW, skin);
+    circle(ctx, W * 0.16 + armSwing, shoulder + H * 0.23, W * 0.055, skinDark);
+    circle(ctx, W * 0.84 - armSwing, shoulder + H * 0.21, W * 0.055, skin);
   } else {
     const reach = side !== 0 ? side : 1;
-    limb(ctx, W * 0.5, shoulder + torsoH * 0.2, W * 0.5 + reach * W * 0.38, shoulder + H * 0.17, W * 0.1, skinDark);
+    limb(ctx, W * 0.5, shoulder + torsoH * 0.2, W * 0.5 + reach * W * 0.38, shoulder + H * 0.17, armW, skinDark);
     limb(ctx, W * 0.42, shoulder + torsoH * 0.35, W * 0.3 - reach * W * 0.08, shoulder + H * 0.3, W * 0.09, shade(skin, -38));
     circle(ctx, W * 0.5 + reach * W * 0.39, shoulder + H * 0.17, W * 0.055, skin);
   }
@@ -147,11 +206,24 @@ function drawZombieSprite(ctx, W, H, type, dir, frame, variant, chase) {
   rect(ctx, headX - headW / 2, headY, headW, headH * 0.25, shade(skin, -34));
   if (front > -0.35) {
     const ex = headX + side * headW * 0.18;
-    rect(ctx, ex - headW * 0.24, headY + headH * 0.38, headW * 0.14, headH * 0.16, '#221e18');
-    rect(ctx, ex + headW * 0.12, headY + headH * 0.38, headW * 0.14, headH * 0.16, '#221e18');
-    if (chase) rect(ctx, headX - headW * 0.17, headY + headH * 0.67, headW * 0.34, headH * 0.1, '#3f1918');
+    rect(ctx, ex - headW * 0.24, headY + headH * 0.38, headW * 0.14, headH * 0.16, eyeCol);
+    rect(ctx, ex + headW * 0.12, headY + headH * 0.38, headW * 0.14, headH * 0.16, eyeCol);
+    if (windStage || strike) {
+      ctx.globalAlpha = 0.18;
+      circle(ctx, ex - headW * 0.17, headY + headH * 0.46, headW * 0.13, '#ff8d54');
+      circle(ctx, ex + headW * 0.19, headY + headH * 0.46, headW * 0.13, '#ff8d54');
+      ctx.globalAlpha = 1;
+    }
+    if (mouthOpen) {
+      rect(ctx, headX - headW * 0.17, headY + headH * 0.67, headW * 0.34, headH * 0.12, '#3f1918');
+      rect(ctx, headX - headW * 0.1, headY + headH * 0.68, headW * 0.05, headH * 0.04, '#9b7a5d');
+      rect(ctx, headX + headW * 0.05, headY + headH * 0.68, headW * 0.05, headH * 0.04, '#9b7a5d');
+    }
   } else {
     rect(ctx, headX - headW * 0.25, headY + headH * 0.18, headW * 0.5, headH * 0.35, shade(skin, -22));
+    if (windStage || strike) {
+      rect(ctx, headX - headW * 0.18, headY + headH * 0.3, headW * 0.36, headH * 0.05, '#c56c4c');
+    }
   }
   rect(ctx, headX - headW * 0.18, headY + headH * 0.82, headW * 0.16, headH * 0.15, blood);
 }
@@ -602,14 +674,31 @@ export class FirstPersonRenderer {
       }
     }
     for (const z of g.zombies) {
-      if (z.dead) continue;
+      const deadAge = z.dead ? g.time - (z.deathTime || g.time) : 0;
+      if (z.dead && deadAge > 1.15) continue;
       const def = ZOMBIE_TYPES[z.type] || ZOMBIE_TYPES.walker;
       const dir = Math.round(normAngle((z.aimAngle || 0) - view.yaw - Math.PI) / (Math.PI / 4)) & 7;
-      const frame = z.moving ? (Math.floor(z.walkPhase * 2) % 2) : 0;
+      let pose = 'idle';
+      let frame = 0;
+      if (z.dead) {
+        pose = 'dead' + (deadAge > 0.16 ? 1 : 0);
+      } else if (z.attackWindup > 0) {
+        const progress = z.attackWindupMax ? 1 - z.attackWindup / z.attackWindupMax : 0.5;
+        pose = 'wind' + (progress > 0.45 ? 2 : 1);
+      } else if (z.attackAnim > 0) {
+        pose = 'strike';
+      } else if (z.moving) {
+        pose = 'walk';
+        frame = Math.floor(z.walkPhase * 2.4) % 4;
+      } else if (z.chase) {
+        pose = 'walk';
+        frame = Math.floor(z.walkPhase * 1.4) % 4;
+      }
       const dims = z.type === 'crawler' ? [40, 31] :
         z.type === 'brute' ? [56, 70] : [42, 60];
-      const sprite = this.sprite('zombie:' + z.type + ':' + dir + ':' + frame + ':' + z.variant + ':' + (z.chase ? 1 : 0),
-        dims[0], dims[1], (c, W, H) => drawZombieSprite(c, W, H, z.type, dir, frame, z.variant, z.chase));
+      const sprite = this.sprite('zombie:' + z.type + ':' + dir + ':' + frame + ':' + z.variant + ':' +
+        (z.chase ? 1 : 0) + ':' + pose,
+        dims[0], dims[1], (c, W, H) => drawZombieSprite(c, W, H, z.type, dir, frame, z.variant, z.chase, pose));
       const size = def.size || 1;
       add(z.x, z.y, z.type === 'brute' ? 16 : z.type === 'crawler' ? 13 : 11,
         z.type === 'crawler' ? 7 : 17 * size, sprite, 'zombie', z);
@@ -625,7 +714,12 @@ export class FirstPersonRenderer {
       const sway = o.kind === 'tree' ? Math.sin(this.game.time * 1.1 + o.data.sway) * screenW * 0.035 : 0;
       const left = screenX - screenW / 2 + sway;
       const top = baseY - screenH;
+      const deadZombie = o.kind === 'zombie' && o.data.dead;
+      const fade = deadZombie ? 1 - clamp((this.game.time - o.data.deathTime - 0.7) / 0.45, 0, 1) : 1;
+      if (fade <= 0.01) continue;
 
+      ctx.save();
+      if (fade < 1) ctx.globalAlpha = fade;
       ctx.fillStyle = 'rgba(0,0,0,' + (o.kind === 'beacon' ? 0.18 : 0.32) + ')';
       ctx.beginPath();
       ctx.ellipse(screenX, baseY, Math.max(1, screenW * 0.55), Math.max(1, screenW * 0.11), 0, 0, PI2);
@@ -638,14 +732,25 @@ export class FirstPersonRenderer {
         ctx.fillRect(screenX - screenW * 3, top - screenW * 2, screenW * 6, screenW * 4);
       }
       this.drawBillboard(ctx, o.sprite, left, top, screenW, screenH, o.depth, zbuf, view.w);
-      if (o.kind === 'zombie' && o.data.hp < o.data.maxHp && o.depth < 120) {
-        const bw = Math.max(12, screenW * 0.8);
-        const by = top - Math.max(2, 4 * view.focal / o.depth);
-        ctx.fillStyle = 'rgba(16,18,15,0.8)';
-        ctx.fillRect(screenX - bw / 2, by, bw, Math.max(2, bw * 0.08));
-        ctx.fillStyle = o.data.type === 'brute' ? '#c25d4a' : '#9db064';
-        ctx.fillRect(screenX - bw / 2, by, bw * clamp(o.data.hp / o.data.maxHp, 0, 1), Math.max(2, bw * 0.08));
+      if (o.kind === 'zombie' && !o.data.dead) {
+        if (o.data.hp < o.data.maxHp && o.depth < 120) {
+          const bw = Math.max(12, screenW * 0.8);
+          const by = top - Math.max(2, 4 * view.focal / o.depth);
+          ctx.fillStyle = 'rgba(16,18,15,0.8)';
+          ctx.fillRect(screenX - bw / 2, by, bw, Math.max(2, bw * 0.08));
+          ctx.fillStyle = o.data.type === 'brute' ? '#c25d4a' : '#9db064';
+          ctx.fillRect(screenX - bw / 2, by, bw * clamp(o.data.hp / o.data.maxHp, 0, 1), Math.max(2, bw * 0.08));
+        }
+        if (o.data.attackWindup > 0) {
+          const pulse = 0.55 + Math.sin(this.game.time * 26) * 0.35;
+          const mark = clamp(screenH * 0.12, 3, 8);
+          const my = top - mark * 2.6;
+          ctx.fillStyle = 'rgba(244,154,88,' + clamp(pulse, 0.2, 0.95) + ')';
+          ctx.fillRect(screenX - mark * 0.16, my, Math.max(1, mark * 0.32), mark * 1.2);
+          ctx.fillRect(screenX - mark * 0.16, my + mark * 1.6, Math.max(1, mark * 0.32), mark * 0.4);
+        }
       }
+      ctx.restore();
     }
   }
 
@@ -989,6 +1094,18 @@ export class FirstPersonRenderer {
     ctx.stroke();
     ctx.fillStyle = 'rgba(225,220,185,0.55)';
     ctx.fillRect(cx, cy, 1, 1);
+    if (g.hitMarker > 0) {
+      const a = clamp(g.hitMarker / 0.16, 0, 1);
+      const len = 5 + (1 - a) * 3;
+      ctx.strokeStyle = g.hitMarkerKill ? 'rgba(231,201,107,' + a + ')' : 'rgba(240,229,192,' + a + ')';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(cx - gap - 2, cy - gap - 2); ctx.lineTo(cx - gap - 2 - len, cy - gap - 2 - len);
+      ctx.moveTo(cx + gap + 2, cy - gap - 2); ctx.lineTo(cx + gap + 2 + len, cy - gap - 2 - len);
+      ctx.moveTo(cx - gap - 2, cy + gap + 2); ctx.lineTo(cx - gap - 2 - len, cy + gap + 2 + len);
+      ctx.moveTo(cx + gap + 2, cy + gap + 2); ctx.lineTo(cx + gap + 2 + len, cy + gap + 2 + len);
+      ctx.stroke();
+    }
   }
 
   renderOverlays(ctx, view) {
@@ -1007,6 +1124,32 @@ export class FirstPersonRenderer {
     }
     if (g.overrun) {
       ctx.fillStyle = 'rgba(100,22,18,0.08)';
+      ctx.fillRect(0, 0, w, h);
+    }
+    if (g.lastHurtTimer > 0) {
+      const rel = normAngle(g.lastHurtAngle - g.fpYaw);
+      const angle = rel - Math.PI / 2;
+      const radius = Math.min(w, h) * 0.27;
+      const alpha = clamp(g.lastHurtTimer / 1.1, 0, 1) * 0.85;
+      ctx.strokeStyle = 'rgba(210,70,54,' + alpha + ')';
+      ctx.lineWidth = Math.max(3, Math.min(w, h) * 0.012);
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.arc(w / 2, h * 0.5, radius, angle - 0.24, angle + 0.24);
+      ctx.stroke();
+      ctx.lineCap = 'butt';
+    }
+    let danger = 0;
+    for (const z of g.zombies) {
+      if (z.dead || z.attackWindup <= 0) continue;
+      const d = Math.hypot(z.x - p.x, z.y - p.y);
+      danger = Math.max(danger, clamp(1 - d / 55, 0, 1));
+    }
+    if (danger > 0) {
+      const grad = ctx.createRadialGradient(w / 2, h * 0.52, Math.min(w, h) * 0.22, w / 2, h * 0.52, Math.max(w, h) * 0.7);
+      grad.addColorStop(0, 'rgba(120,25,18,0)');
+      grad.addColorStop(1, 'rgba(150,30,20,' + (0.1 + Math.sin(g.time * 9) * 0.035) * danger + ')');
+      ctx.fillStyle = grad;
       ctx.fillRect(0, 0, w, h);
     }
   }

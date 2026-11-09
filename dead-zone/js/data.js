@@ -360,10 +360,10 @@ export const ZONES = {
 };
 
 export const ZOMBIE_TYPES = {
-  walker: { name: 'Walker', health: 60, speed: 26, chase: 42, damage: 10, vision: 105, radius: 7, xp: 12, color: '#71805a', skin: '#8ca06b', size: 1, attackRate: 1.25, hearing: 190 },
-  runner: { name: 'Runner', health: 42, speed: 38, chase: 92, damage: 8, vision: 165, radius: 7, xp: 18, color: '#77745a', skin: '#b0a272', size: 1, attackRate: 0.8, hearing: 260 },
-  brute: { name: 'Brute', health: 190, speed: 20, chase: 34, damage: 26, vision: 130, radius: 11, xp: 45, color: '#4f563f', skin: '#6e7a52', size: 1.45, attackRate: 1.6, hearing: 200, knockback: 14 },
-  crawler: { name: 'Crawler', health: 30, speed: 18, chase: 55, damage: 6, vision: 80, radius: 6, xp: 9, color: '#5d5a48', skin: '#8d8a64', size: 0.75, attackRate: 0.9, hearing: 120, low: true }
+  walker: { name: 'Walker', health: 60, speed: 26, chase: 42, fpChase: 36, damage: 10, vision: 105, radius: 7, xp: 12, color: '#71805a', skin: '#8ca06b', size: 1, attackRate: 1.25, windup: 0.55, hearing: 190 },
+  runner: { name: 'Runner', health: 42, speed: 38, chase: 92, fpChase: 61, damage: 8, vision: 165, radius: 7, xp: 18, color: '#77745a', skin: '#b0a272', size: 1, attackRate: 0.8, windup: 0.38, hearing: 260 },
+  brute: { name: 'Brute', health: 190, speed: 20, chase: 34, fpChase: 29, damage: 26, vision: 130, radius: 11, xp: 45, color: '#4f563f', skin: '#6e7a52', size: 1.45, attackRate: 1.6, windup: 0.82, hearing: 200, knockback: 14 },
+  crawler: { name: 'Crawler', health: 30, speed: 18, chase: 55, fpChase: 44, damage: 6, vision: 80, radius: 6, xp: 9, color: '#5d5a48', skin: '#8d8a64', size: 0.75, attackRate: 0.9, windup: 0.32, hearing: 120, low: true }
 };
 
 export const PLAYER_BASE = {

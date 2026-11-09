@@ -229,7 +229,7 @@ function showHelp() {
     <h3>CONTROLS — TOUCH</h3>
     <p>Use the left joystick to move. Drag anywhere on the field to look around in first-person. Tap VIEW under the minimap to switch view. On the right: STRIKE attacks, USE interacts, RUN sprints, MED/EAT/DRINK appear in the kit, and KIT opens your inventory.</p>
     <h3>SURVIVAL</h3>
-    <p>Watch health, stamina, hunger and thirst. Bleeding drains health. Shoot only when you can afford the noise. Zombies investigate gunshots and can call nearby dead. Crouching reduces detection.</p>
+    <p>Watch health, stamina, hunger and thirst. Bleeding drains health. Shoot only when you can afford the noise. Infected rear back before striking — use that moment to move or fire. Zombies investigate gunshots and can call nearby dead. Crouching reduces detection.</p>
     <h3>CAMP</h3>
     <p>Build a workbench to unlock crafting, crates for storage, gardens and collectors for daily supplies, walls and barricades for defense. The radio tower reveals extract beacons and speeds extraction. Each return advances the day.</p>`;
   modal.open({ title: 'SURVIVAL BRIEFING', subtitle: 'READ BEFORE YOU DEPLOY', content, className: 'narrow' });

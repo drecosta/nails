@@ -86,6 +86,10 @@ export class Game {
     this.promptAccum = 0;
     this.lastPromptText = '';
     this.deathCause = '';
+    this.hitMarker = 0;
+    this.hitMarkerKill = false;
+    this.lastHurtAngle = 0;
+    this.lastHurtTimer = 0;
     this.minimap = document.getElementById('minimap');
     this.minimapCtx = this.minimap ? this.minimap.getContext('2d') : null;
     this.usingTouch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
@@ -208,7 +212,8 @@ export class Game {
       homeX: x, homeY: y, state: alerted ? 'chase' : 'idle',
       stateTimer: randRange(this.rng, 0.5, 3), targetX: x, targetY: y,
       aimAngle: 0, moving: false, walkPhase: this.rng() * 6,
-      attackCd: 0, hitFlash: 0, chase: !!alerted, dead: false,
+      attackCd: 0, attackWindup: 0, attackWindupMax: 0, attackAnim: 0,
+      hitFlash: 0, stagger: 0, chase: !!alerted, dead: false,
       lostTimer: 0, searchTimer: 0, variant: Math.floor(this.rng() * 3),
       lastSeenX: x, lastSeenY: y, alertFlash: 0,
       avoidDir: 0, avoidTimer: 0, stuckTimer: 0,
@@ -504,6 +509,9 @@ export class Game {
   damageZombie(z, dmg, angle, crit, knockback) {
     z.hp -= dmg;
     z.hitFlash = 0.12;
+    this.hitMarker = 0.16;
+    this.hitMarkerKill = z.hp <= 0;
+    z.stagger = Math.max(z.stagger || 0, z.type === 'brute' ? 0.06 : z.type === 'runner' ? 0.12 : 0.18);
     z.chase = true;
     z.alerted = true;
     z.state = 'chase';
@@ -535,6 +543,9 @@ export class Game {
   killZombie(z) {
     z.dead = true;
     z.deathTime = this.time;
+    z.attackWindup = 0;
+    z.attackAnim = 0;
+    z.moving = false;
     const def = ZOMBIE_TYPES[z.type];
     this.stats.kills++;
     this.stats.xp += def.xp;
@@ -579,6 +590,8 @@ export class Game {
     p.health -= dmg;
     p.invuln = 0.45;
     p.hurtFlash = 0.25;
+    this.lastHurtAngle = angleTo(p.x, p.y, z.x, z.y);
+    this.lastHurtTimer = 1.1;
     if (this.rng() < (z.type === 'brute' ? 0.55 : z.type === 'runner' ? 0.18 : 0.3)) p.bleed = Math.min(5, p.bleed + 1);
     if (this.save.settings.shake) this.camera.shake = Math.min(8, this.camera.shake + (z.type === 'brute' ? 6 : 3));
     audio.hurt();
@@ -956,6 +969,8 @@ export class Game {
     p.muzzle = Math.max(0, p.muzzle - dt);
     p.invuln = Math.max(0, p.invuln - dt);
     p.hurtFlash = Math.max(0, p.hurtFlash - dt);
+    this.hitMarker = Math.max(0, this.hitMarker - dt);
+    this.lastHurtTimer = Math.max(0, this.lastHurtTimer - dt);
     this.camera.shake = Math.max(0, this.camera.shake - dt * 12);
 
     let mx = this.moveInput.x, my = this.moveInput.y;
@@ -1055,11 +1070,14 @@ export class Game {
       if (z.dead) continue;
       z.hitFlash = Math.max(0, z.hitFlash - dt);
       z.attackCd = Math.max(0, z.attackCd - dt);
+      z.attackAnim = Math.max(0, (z.attackAnim || 0) - dt);
+      z.stagger = Math.max(0, (z.stagger || 0) - dt);
       z.alertFlash = Math.max(0, (z.alertFlash || 0) - dt);
       const d = dist(z.x, z.y, px, py);
       if (d > 720 && !z.chase) { z.moving = false; continue; }
 
       const def = ZOMBIE_TYPES[z.type];
+      const chaseSpeed = this.viewMode === 'fp' && def.fpChase ? def.fpChase : def.chase;
       const detectBonus = p.crouching ? 0.55 : 1;
       const moveBonus = p.running ? 1.3 : p.moving ? 1.1 : 0.9;
       const canSee = d < def.vision * detectBonus * moveBonus && this.world.hasLOS(z.x, z.y - 5, px, py - 5);
@@ -1115,7 +1133,7 @@ export class Game {
       }
 
       let tx = z.targetX, ty = z.targetY;
-      let speed = z.chase ? def.chase : def.speed;
+      let speed = z.chase ? chaseSpeed : def.speed;
       if (z.state === 'idle') {
         z.stateTimer -= dt;
         z.moving = false;
@@ -1152,16 +1170,32 @@ export class Game {
           }
         }
       } else if (z.state === 'chase') {
-        speed = def.chase;
+        speed = chaseSpeed;
       }
 
-      if (z.chase && d < (def.low ? 10 : 13) + (def.size || 1) * 3) {
+      const attackRange = (def.low ? 10 : 13) + (def.size || 1) * 3;
+      if (z.attackWindup > 0) {
+        z.moving = false;
+        z.aimAngle = angleTo(z.x, z.y - 5, px, py - 5);
+        z.attackWindup -= dt;
+        if (z.attackWindup <= 0) {
+          z.attackWindup = 0;
+          z.attackAnim = 0.34;
+          if (dist(z.x, z.y, px, py) <= attackRange + 2) this.attackPlayer(z);
+        }
+      } else if (z.attackAnim > 0) {
+        z.moving = false;
+        z.aimAngle = angleTo(z.x, z.y - 5, px, py - 5);
+      } else if (z.chase && d < attackRange) {
         z.moving = false;
         z.aimAngle = angleTo(z.x, z.y - 5, px, py - 5);
         if (z.attackCd <= 0) {
-          z.attackCd = def.attackRate;
-          this.attackPlayer(z);
-          z.attackAnim = 0.25;
+          const windup = def.windup || 0.45;
+          z.attackWindup = windup;
+          z.attackWindupMax = windup;
+          z.attackCd = def.attackRate + windup;
+          z.alertFlash = Math.max(z.alertFlash || 0, 0.4);
+          if (this.rng() < 0.25) audio.zombie();
         }
       } else if (z.state !== 'idle') {
         tx = z.targetX; ty = z.targetY;
@@ -1178,10 +1212,11 @@ export class Game {
           dx += sepX * 0.35; dy += sepY * 0.35;
           const dl = Math.hypot(dx, dy) || 1;
           dx /= dl; dy /= dl;
-          const moved = this.tryZombieStep(z, dx, dy, speed * dt);
+          const moved = z.stagger > 0 ? false : this.tryZombieStep(z, dx, dy, speed * dt);
           z.moving = moved;
           if (moved) {
-            z.walkPhase += dt * (z.chase ? 12 : 7);
+            const gait = z.type === 'runner' ? 15 : z.type === 'brute' ? 8 : z.chase ? 11 : 6;
+            z.walkPhase += dt * gait;
             z.stuckTimer = Math.max(0, z.stuckTimer - dt * 2);
           } else {
             z.aimAngle = angleTo(z.x, z.y - 5, tx, ty - 5);
