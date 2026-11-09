@@ -957,8 +957,11 @@ kbd {
   .hud-mapbox { grid-template-columns: 70px; }
   #minimap { width: 70px; height: 70px; }
   .hud-kills { display: none; }
-  .hud-map-actions { flex-direction: row; grid-column: 1; }
-  .round-btn { width: 34px; height: 34px; font-size: 8px; }
+  .hud-map-actions {
+    display: grid; grid-template-columns: repeat(2, 33px); gap: 4px;
+    grid-column: 1; justify-self: start;
+  }
+  .round-btn { width: 33px; height: 33px; font-size: 7px; letter-spacing: 0; }
   .hud-weapon { width: 170px; padding: 7px 8px; bottom: calc(82px + var(--safe-bottom)); }
   .weapon-ammo b { font-size: 17px; }
   .weapon-head small { font-size: 8px; }
@@ -998,4 +1001,53 @@ kbd {
   .camp-corner .icon-btn.wide { display: none; }
   .panel-head { font-size: 9px; }
   .result-title { font-size: 34px; }
+}
+
+/* ============================ TOUCH HUD LAYOUT ============================ */
+@media (max-width: 720px), (pointer: coarse) {
+  body.touch-device .hud-top {
+    padding: calc(8px + var(--safe-top)) calc(9px + var(--safe-right)) 0 calc(9px + var(--safe-left));
+    gap: 8px;
+  }
+  body.touch-device .hud-vitals { width: min(210px, 54vw); padding: 6px 8px; }
+  body.touch-device .stat-row { margin: 2px 0; }
+  body.touch-device .stat-track { height: 6px; }
+  body.touch-device .hud-center {
+    position: absolute; left: 50%; top: calc(84px + var(--safe-top));
+    transform: translateX(-50%);
+  }
+  body.touch-device .hud-mapbox { grid-template-columns: 70px; gap: 8px; }
+  body.touch-device #minimap { width: 70px; height: 70px; }
+  body.touch-device .hud-kills { display: none; }
+  body.touch-device .hud-map-actions {
+    display: grid; grid-template-columns: repeat(2, 33px); gap: 4px;
+    grid-column: 1; justify-self: start;
+  }
+  body.touch-device .round-btn { width: 33px; height: 33px; font-size: 7px; letter-spacing: 0; }
+  body.touch-device #btn-view { font-size: 8px; }
+  body.touch-device .hud-weapon {
+    top: calc(132px + var(--safe-top)); left: calc(9px + var(--safe-left));
+    right: auto; bottom: auto; width: min(170px, 46vw); padding: 7px 8px;
+  }
+  body.touch-device .weapon-ammo b { font-size: 17px; }
+  body.touch-device .weapon-head small { font-size: 8px; }
+  body.touch-device .hud-prompt {
+    bottom: calc(200px + var(--safe-bottom));
+    min-width: 170px; max-width: 70vw; font-size: 8px;
+  }
+  body.touch-device .status-effects {
+    left: calc(9px + var(--safe-left)); bottom: calc(176px + var(--safe-bottom));
+    max-width: min(260px, 36vw);
+  }
+  body.touch-device .extraction-panel { top: calc(240px + var(--safe-top)); width: 76vw; }
+}
+
+@media (max-height: 560px) and (orientation: landscape) {
+  body.touch-device .hud-center { top: calc(8px + var(--safe-top)); }
+  body.touch-device .extraction-panel { top: calc(64px + var(--safe-top)); width: min(430px, 46vw); }
+  body.touch-device .hud-prompt {
+    bottom: calc(196px + var(--safe-bottom));
+    min-width: 150px; max-width: 40vw;
+  }
+  body.touch-device .hud-weapon { width: min(160px, 32vw); }
 }

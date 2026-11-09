@@ -227,7 +227,7 @@ function showHelp() {
     <div class="keyrow"><kbd>R</kbd><span>Reload · <b>F</b> med · <b>G</b> eat · <b>H</b> drink</span></div>
     <div class="keyrow"><kbd>TAB</kbd><span>Field kit · <b>M</b> map · <b>Esc</b> pause</span></div>
     <h3>CONTROLS — TOUCH</h3>
-    <p>Use the left joystick to move. Drag anywhere on the field to look around in first-person. On the right: STRIKE attacks, USE interacts, RUN sprints, MED/EAT/DRINK appear in the kit, and KIT opens your inventory.</p>
+    <p>Use the left joystick to move. Drag anywhere on the field to look around in first-person. Tap VIEW under the minimap to switch view. On the right: STRIKE attacks, USE interacts, RUN sprints, MED/EAT/DRINK appear in the kit, and KIT opens your inventory.</p>
     <h3>SURVIVAL</h3>
     <p>Watch health, stamina, hunger and thirst. Bleeding drains health. Shoot only when you can afford the noise. Zombies investigate gunshots and can call nearby dead. Crouching reduces detection.</p>
     <h3>CAMP</h3>

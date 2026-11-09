@@ -172,7 +172,7 @@ export class HUD {
     if (this.hotMelee) this.hotMelee.classList.toggle('active', p.mode === 'melee');
     if (this.btnCrouch) this.btnCrouch.classList.toggle('active', p.crouching);
     if (this.btnView) {
-      this.btnView.textContent = p.view === 'fp' ? 'FP' : 'ISO';
+      this.btnView.textContent = p.view === 'fp' ? 'FP' : 'VIEW';
       this.btnView.classList.toggle('active', p.view === 'fp');
       this.btnView.title = p.view === 'fp' ? 'First-person view — click or V for isometric' : 'Isometric view — click or V for first-person';
       document.body.classList.toggle('first-person', p.view === 'fp');
