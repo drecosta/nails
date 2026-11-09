@@ -245,17 +245,19 @@ export function drawZombie(ctx, z, t) {
   /* stains */
   rect(ctx, x - 2 * s, bodyY + 2, 2 * s, 2, '#5c2f2b');
   rect(ctx, x + 1, bodyY + 4, 2, 1, '#4b2724');
-  /* head */
+  /* head and hunting gaze */
+  const ang = z.aimAngle != null ? z.aimAngle : 0;
+  const lookX = Math.cos(ang) * 1.5 * s;
+  const lookY = Math.sin(ang) * 1.1 * s;
   const headY = bodyY - 6 * s;
   rect(ctx, x - 3 * s, headY, 6 * s, 6 * s, skin);
   rect(ctx, x - 3 * s, headY, 6 * s, 1.5, shade(skin, -30));
-  rect(ctx, x - 1.5 * s, headY + 2.4, 1.2 * s, 1.2 * s, '#231f19');
-  rect(ctx, x + 1.8 * s, headY + 2.4, 1.2 * s, 1.2 * s, '#231f19');
+  rect(ctx, x - 2.6 * s + lookX, headY + 2.2 + lookY, 1.2 * s, 1.2 * s, '#231f19');
+  rect(ctx, x + 1.2 * s + lookX, headY + 2.2 + lookY, 1.2 * s, 1.2 * s, '#231f19');
   if (z.chase) {
-    rect(ctx, x - 2 * s, headY + 4.2, 4 * s, 1, '#4a1f1e');
+    rect(ctx, x - 2 * s + lookX, headY + 4.2 + lookY * 0.5, 4 * s, 1, '#4a1f1e');
   }
   /* outstretched arms */
-  const ang = z.aimAngle != null ? z.aimAngle : 0;
   const reach = z.chase ? 7 : 5;
   ctx.save();
   ctx.translate(x, bodyY + 3);
@@ -267,6 +269,13 @@ export function drawZombie(ctx, z, t) {
     ctx.globalAlpha = 0.35;
     rect(ctx, x - 5 * s, bodyY - 6 * s, 10 * s, bodyH + 6 * s, '#e9c0a0');
     ctx.globalAlpha = 1;
+  }
+  if (z.alertFlash > 0) {
+    const sway = Math.sin(t * 9 + z.walkPhase) * 0.8;
+    const top = bodyY - 13 * s + sway;
+    const col = z.chase ? '#d9c56d' : '#b98c57';
+    rect(ctx, x - 1, top, 2, 4, col);
+    rect(ctx, x - 1, top + 6, 2, 2, col);
   }
   if (z.hp < z.maxHp) {
     const w = 10 * s;

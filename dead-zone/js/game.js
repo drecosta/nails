@@ -184,6 +184,8 @@ export class Game {
       aimAngle: 0, moving: false, walkPhase: this.rng() * 6,
       attackCd: 0, hitFlash: 0, chase: !!alerted, dead: false,
       lostTimer: 0, searchTimer: 0, variant: Math.floor(this.rng() * 3),
+      lastSeenX: x, lastSeenY: y, alertFlash: 0,
+      avoidDir: 0, avoidTimer: 0, stuckTimer: 0,
       speed: def.speed, alerted: !!alerted
     };
     if (z.chase) z.targetX = this.player.x, z.targetY = this.player.y;
@@ -934,6 +936,7 @@ export class Game {
       if (z.dead) continue;
       z.hitFlash = Math.max(0, z.hitFlash - dt);
       z.attackCd = Math.max(0, z.attackCd - dt);
+      z.alertFlash = Math.max(0, (z.alertFlash || 0) - dt);
       const d = dist(z.x, z.y, px, py);
       if (d > 720 && !z.chase) { z.moving = false; continue; }
 
@@ -942,27 +945,53 @@ export class Game {
       const moveBonus = p.running ? 1.3 : p.moving ? 1.1 : 0.9;
       const canSee = d < def.vision * detectBonus * moveBonus && this.world.hasLOS(z.x, z.y - 5, px, py - 5);
       const canHear = d < def.hearing * (p.running ? 1.25 : p.crouching ? 0.35 : 0.7);
+      const heard = canHear && (p.moving || p.running);
 
-      if (!z.chase && (canSee || (canHear && p.moving))) {
+      if (canSee) {
+        z.lastSeenX = px; z.lastSeenY = py;
+      } else if (heard) {
+        z.lastSeenX = px + randRange(this.rng, -16, 16);
+        z.lastSeenY = py + randRange(this.rng, -16, 16);
+      }
+
+      if (!z.chase && (canSee || heard)) {
         z.chase = true;
         z.alerted = true;
         z.state = 'chase';
         z.lostTimer = 0;
+        z.searchTimer = 5;
+        z.alertFlash = 1;
+        z.aimAngle = angleTo(z.x, z.y - 5, px, py - 5);
         if (this.rng() < 0.04) this.toast('A zombie has your scent.', 'warn');
         for (const o of this.zombies) {
           if (o === z || o.dead || o.chase) continue;
-          if (dist(o.x, o.y, z.x, z.y) < 130) { o.state = 'investigate'; o.targetX = px; o.targetY = py; o.stateTimer = 5; o.alerted = true; }
+          if (dist(o.x, o.y, z.x, z.y) < 130) {
+            o.state = 'investigate';
+            o.targetX = px; o.targetY = py;
+            o.lastSeenX = px; o.lastSeenY = py;
+            o.stateTimer = 5; o.searchTimer = 3; o.alerted = true;
+            o.alertFlash = Math.max(o.alertFlash || 0, 0.75);
+          }
         }
         audio.zombie();
       }
 
       if (z.chase) {
-        z.lostTimer = canSee || d < 55 ? 0 : z.lostTimer + dt;
-        z.targetX = px; z.targetY = py;
+        if (canSee || d < 55) {
+          z.lostTimer = 0;
+          z.targetX = px; z.targetY = py;
+          z.lastSeenX = px; z.lastSeenY = py;
+        } else {
+          z.lostTimer += dt;
+          z.targetX = z.lastSeenX != null ? z.lastSeenX : px;
+          z.targetY = z.lastSeenY != null ? z.lastSeenY : py;
+        }
         if (z.lostTimer > 5) {
           z.chase = false;
           z.state = 'investigate';
-          z.stateTimer = 5;
+          z.stateTimer = 6;
+          z.searchTimer = 5;
+          z.alertFlash = Math.max(z.alertFlash || 0, 0.6);
         }
       }
 
@@ -971,6 +1000,7 @@ export class Game {
       if (z.state === 'idle') {
         z.stateTimer -= dt;
         z.moving = false;
+        z.aimAngle = (z.variant - 1) * 1.1 + Math.sin(this.time * 0.85 + z.walkPhase) * 0.9;
         if (z.stateTimer <= 0) {
           z.state = 'wander';
           z.stateTimer = randRange(this.rng, 2, 5);
@@ -990,8 +1020,17 @@ export class Game {
         z.stateTimer -= dt;
         speed = def.speed * 1.5;
         if (z.stateTimer <= 0 || dist(z.x, z.y, z.targetX, z.targetY) < 8) {
-          z.state = 'idle';
-          z.stateTimer = randRange(this.rng, 1, 3);
+          if (z.searchTimer > 0) {
+            z.searchTimer -= 1;
+            const a = this.rng() * Math.PI * 2;
+            const rr = randRange(this.rng, 14, 44);
+            z.targetX = (z.lastSeenX != null ? z.lastSeenX : z.x) + Math.cos(a) * rr;
+            z.targetY = (z.lastSeenY != null ? z.lastSeenY : z.y) + Math.sin(a) * rr;
+            z.stateTimer = randRange(this.rng, 1.5, 3.2);
+          } else {
+            z.state = 'idle';
+            z.stateTimer = randRange(this.rng, 1, 3);
+          }
         }
       } else if (z.state === 'chase') {
         speed = def.chase;
@@ -999,6 +1038,7 @@ export class Game {
 
       if (z.chase && d < (def.low ? 10 : 13) + (def.size || 1) * 3) {
         z.moving = false;
+        z.aimAngle = angleTo(z.x, z.y - 5, px, py - 5);
         if (z.attackCd <= 0) {
           z.attackCd = def.attackRate;
           this.attackPlayer(z);
@@ -1019,20 +1059,35 @@ export class Game {
           dx += sepX * 0.35; dy += sepY * 0.35;
           const dl = Math.hypot(dx, dy) || 1;
           dx /= dl; dy /= dl;
-          const step = speed * dt;
-          let moved = false;
-          if (this.world.canMove(z.x + dx * step, z.y, z.r)) { z.x += dx * step; moved = true; }
-          else if (this.world.canMove(z.x, z.y + dy * step, z.r)) { z.y += dy * step; moved = true; }
-          else {
-            const side = z.variant % 2 ? 1 : -1;
-            if (this.world.canMove(z.x - dy * step * side, z.y + dx * step * side, z.r)) {
-              z.x -= dy * step * side; z.y += dx * step * side; moved = true;
+          const moved = this.tryZombieStep(z, dx, dy, speed * dt);
+          z.moving = moved;
+          if (moved) {
+            z.walkPhase += dt * (z.chase ? 12 : 7);
+            z.stuckTimer = Math.max(0, z.stuckTimer - dt * 2);
+          } else {
+            z.aimAngle = angleTo(z.x, z.y - 5, tx, ty - 5);
+            z.stuckTimer = (z.stuckTimer || 0) + dt;
+            if (z.stuckTimer > 0.7) {
+              z.stuckTimer = 0;
+              const side = z.variant % 2 ? 1 : -1;
+              z.avoidDir = -(z.avoidDir || side * 0.55);
+              if (z.chase) {
+                z.targetX = z.lastSeenX != null ? z.lastSeenX : px;
+                z.targetY = z.lastSeenY != null ? z.lastSeenY : py;
+              } else {
+                const a = this.rng() * Math.PI * 2;
+                const rr = randRange(this.rng, 18, 50);
+                z.targetX = z.homeX + Math.cos(a) * rr;
+                z.targetY = z.homeY + Math.sin(a) * rr;
+                z.state = 'wander';
+                z.stateTimer = randRange(this.rng, 1.5, 3.5);
+              }
             }
           }
-          z.moving = moved;
-          if (moved) z.walkPhase += dt * (z.chase ? 12 : 7);
-          z.aimAngle = Math.atan2(dy * step, dx * step);
-        } else z.moving = false;
+        } else {
+          z.moving = false;
+          z.aimAngle = angleTo(z.x, z.y - 5, tx, ty - 5);
+        }
       } else {
         z.moving = false;
       }
@@ -1042,6 +1097,35 @@ export class Game {
     if (this.frame % 180 === 0) {
       this.zombies = this.zombies.filter(z => !z.dead || this.time - z.deathTime < 20);
     }
+  }
+
+  tryZombieStep(z, dx, dy, step) {
+    if (!(step > 0.0001)) return false;
+    const base = Math.atan2(dy, dx);
+    const side = z.variant % 2 ? 1 : -1;
+    const offsets = [0];
+    if (z.avoidDir) offsets.push(z.avoidDir);
+    for (const off of [0.55, -0.55, 1.05, -1.05, 1.55, -1.55]) offsets.push(off * side);
+    const seen = new Set();
+    for (const off of offsets) {
+      const key = off.toFixed(3);
+      if (seen.has(key)) continue;
+      seen.add(key);
+      const a = base + off;
+      const sx = Math.cos(a) * step;
+      const sy = Math.sin(a) * step;
+      let mx = 0, my = 0;
+      if (Math.abs(sx) > 0.01 && this.world.canMove(z.x + sx, z.y, z.r)) { z.x += sx; mx = sx; }
+      if (Math.abs(sy) > 0.01 && this.world.canMove(z.x, z.y + sy, z.r)) { z.y += sy; my = sy; }
+      if (mx || my) {
+        z.aimAngle = Math.atan2(my, mx);
+        if (off !== 0) { z.avoidDir = off; z.avoidTimer = 0.9; }
+        else if (z.avoidTimer > 0) z.avoidTimer -= 0.05;
+        else z.avoidDir = 0;
+        return true;
+      }
+    }
+    return false;
   }
 
   updateExtraction(dt) {
