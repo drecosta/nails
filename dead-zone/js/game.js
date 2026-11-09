@@ -10,6 +10,7 @@ import {
 } from './inventory.js';
 import { maxHealth, maxStamina } from './save.js';
 import { drawPlayer, drawZombie, drawTree, drawRock, drawContainer, drawExtraction, shade } from './sprites.js';
+import { FirstPersonRenderer } from './firstperson.js';
 import {
   clamp, dist, angleTo, normAngle, randInt, randRange, pick, weightedPick,
   mulberry32, hash2, fmtTime, segmentRect
@@ -90,6 +91,18 @@ export class Game {
     this.usingTouch = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
     if (this.usingTouch) this.player.crouching = false;
 
+    /* first-person view */
+    this.viewMode = this.save.settings && this.save.settings.view === 'fp' ? 'fp' : 'iso';
+    this.fpYaw = this.player.aimAngle;
+    this.fpPitch = 0;
+    this.fpSensitivity = 0.0022;
+    this.fpTouchSensitivity = 0.0052;
+    this.lookPointer = null;
+    this.lookLastX = 0;
+    this.lookLastY = 0;
+    if (this.viewMode === 'fp') this.player.aimAngle = this.fpYaw;
+    this.firstPerson = new FirstPersonRenderer(this);
+
     /* gear-derived flags */
     this.radio = this.equipment.utility && ITEMS[this.equipment.utility.id].tool === 'radio';
     this.flashlight = this.equipment.utility && ITEMS[this.equipment.utility.id].tool === 'flashlight';
@@ -107,6 +120,9 @@ export class Game {
     this._onMouseDown = (e) => this.onMouseDown(e);
     this._onMouseUp = (e) => this.onMouseUp(e);
     this._onMouseMove = (e) => this.onMouseMove(e);
+    this._onPointerDown = (e) => this.onPointerDown(e);
+    this._onPointerMove = (e) => this.onPointerMove(e);
+    this._onPointerUp = (e) => this.onPointerUp(e);
     this._onResize = () => this.resize();
     this._onContext = (e) => e.preventDefault();
     window.addEventListener('keydown', this._onKeyDown);
@@ -114,6 +130,10 @@ export class Game {
     this.canvas.addEventListener('mousedown', this._onMouseDown);
     window.addEventListener('mouseup', this._onMouseUp);
     this.canvas.addEventListener('mousemove', this._onMouseMove);
+    this.canvas.addEventListener('pointerdown', this._onPointerDown);
+    this.canvas.addEventListener('pointermove', this._onPointerMove);
+    this.canvas.addEventListener('pointerup', this._onPointerUp);
+    this.canvas.addEventListener('pointercancel', this._onPointerUp);
     window.addEventListener('resize', this._onResize);
     this.canvas.addEventListener('contextmenu', this._onContext);
     this.resize();
@@ -135,13 +155,19 @@ export class Game {
     this.canvas.removeEventListener('mousedown', this._onMouseDown);
     window.removeEventListener('mouseup', this._onMouseUp);
     this.canvas.removeEventListener('mousemove', this._onMouseMove);
+    this.canvas.removeEventListener('pointerdown', this._onPointerDown);
+    this.canvas.removeEventListener('pointermove', this._onPointerMove);
+    this.canvas.removeEventListener('pointerup', this._onPointerUp);
+    this.canvas.removeEventListener('pointercancel', this._onPointerUp);
     window.removeEventListener('resize', this._onResize);
     this.canvas.removeEventListener('contextmenu', this._onContext);
+    this.releaseLookLock();
   }
 
   toast(text, tone = 'info') { if (this.callbacks.toast) this.callbacks.toast(text, tone); }
   setPaused(v) {
     this.paused = v;
+    if (v) this.releaseLookLock();
     if (!v) this.lastTime = performance.now();
   }
   isPaused() { return this.paused; }
@@ -196,7 +222,7 @@ export class Game {
   onKeyDown(e) {
     if (e.target && /INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return;
     const code = e.code;
-    if (['Tab', 'KeyM', 'KeyE', 'KeyR', 'KeyF', 'KeyG', 'KeyH', 'Space', 'Escape', 'Digit1', 'Digit2', 'KeyC', 'ShiftLeft', 'ShiftRight'].includes(code)) e.preventDefault();
+    if (['Tab', 'KeyM', 'KeyE', 'KeyR', 'KeyF', 'KeyG', 'KeyH', 'KeyV', 'Space', 'Escape', 'Digit1', 'Digit2', 'KeyC', 'ShiftLeft', 'ShiftRight'].includes(code)) e.preventDefault();
     if (this.paused || this.ended) return;
     if (code === 'Escape') { if (this.callbacks.pause) this.callbacks.pause(); return; }
     if (code === 'Tab') { if (this.callbacks.inventory) this.callbacks.inventory(); return; }
@@ -211,6 +237,7 @@ export class Game {
     else if (code === 'Digit1') this.switchWeapon('primary');
     else if (code === 'Digit2') this.switchWeapon('melee');
     else if (code === 'KeyC') this.toggleCrouch();
+    else if (code === 'KeyV') this.toggleViewMode();
     else if (code === 'Space') this.tryAttack();
   }
   onKeyUp(e) { this.keys[e.code] = false; }
@@ -218,6 +245,12 @@ export class Game {
   onMouseDown(e) {
     if (this.paused || this.ended) return;
     if (e.button !== 0) return;
+    if (this.viewMode === 'fp') {
+      this.mouse.down = true;
+      this.requestLookLock();
+      this.tryAttack();
+      return;
+    }
     this.mouse.down = true;
     this.mouse.active = true;
     this.mouse.lastMove = this.time;
@@ -228,10 +261,87 @@ export class Game {
   onMouseMove(e) {
     if (this.paused || this.ended) return;
     if (e.pointerType === 'touch') return;
+    if (this.viewMode === 'fp') {
+      if (document.pointerLockElement === this.canvas || this.mouse.down) {
+        this.lookBy(e.movementX || 0, e.movementY || 0, this.fpSensitivity);
+      }
+      return;
+    }
     this.mouse.active = true;
     this.mouse.lastMove = this.time;
     this.updateMouse(e);
   }
+
+  onPointerDown(e) {
+    if (e.pointerType !== 'touch' || this.viewMode !== 'fp' || this.paused || this.ended) return;
+    e.preventDefault();
+    this.lookPointer = e.pointerId;
+    this.lookLastX = e.clientX;
+    this.lookLastY = e.clientY;
+    try { this.canvas.setPointerCapture(e.pointerId); } catch (err) { /* noop */ }
+  }
+  onPointerMove(e) {
+    if (e.pointerType !== 'touch' || this.viewMode !== 'fp' || e.pointerId !== this.lookPointer) return;
+    e.preventDefault();
+    const dx = e.clientX - this.lookLastX;
+    const dy = e.clientY - this.lookLastY;
+    this.lookLastX = e.clientX;
+    this.lookLastY = e.clientY;
+    this.lookBy(dx, dy, this.fpTouchSensitivity);
+  }
+  onPointerUp(e) {
+    if (e.pointerType !== 'touch' || e.pointerId !== this.lookPointer) return;
+    this.lookPointer = null;
+  }
+
+  lookBy(dx, dy, sensitivity) {
+    if (!dx && !dy) return;
+    this.fpYaw = normAngle(this.fpYaw + dx * sensitivity);
+    this.fpPitch = clamp(this.fpPitch - dy * sensitivity * 0.85, -0.62, 0.62);
+    this.player.aimAngle = this.fpYaw;
+  }
+
+  requestLookLock() {
+    if (this.usingTouch || this.viewMode !== 'fp') return;
+    if (document.pointerLockElement === this.canvas) return;
+    if (!this.canvas.requestPointerLock) return;
+    try {
+      const p = this.canvas.requestPointerLock();
+      if (p && p.catch) p.catch(() => {});
+    } catch (err) { /* noop */ }
+  }
+  releaseLookLock() {
+    if (document.exitPointerLock && document.pointerLockElement === this.canvas) {
+      try { document.exitPointerLock(); } catch (err) { /* noop */ }
+    }
+    this.lookPointer = null;
+  }
+
+  setViewMode(mode, announce = true) {
+    const next = mode === 'fp' ? 'fp' : 'iso';
+    if (next === this.viewMode) return;
+    if (next === 'fp') {
+      this.fpYaw = this.player.aimAngle;
+      this.fpPitch = 0;
+      this.mouse.active = false;
+      this.mouse.down = false;
+      this.player.aimAngle = this.fpYaw;
+    } else {
+      this.releaseLookLock();
+      this.player.aimAngle = this.fpYaw;
+      this.mouse.active = false;
+      this.mouse.down = false;
+    }
+    this.viewMode = next;
+    if (this.save.settings) this.save.settings.view = next;
+    if (this.callbacks.view) this.callbacks.view(next);
+    if (announce) this.toast(next === 'fp' ? 'First-person view.' : 'Isometric view.', 'info');
+    this.updateHud(true);
+  }
+  toggleViewMode() {
+    this.setViewMode(this.viewMode === 'fp' ? 'iso' : 'fp');
+  }
+
   updateMouse(e) {
     const r = this.canvas.getBoundingClientRect();
     const sx = (e.clientX - r.left) * (this.canvas.width / r.width);
@@ -856,6 +966,13 @@ export class Game {
     const len = Math.hypot(mx, my);
     if (len > 1) { mx /= len; my /= len; }
     const moving = len > 0.05;
+    const fp = this.viewMode === 'fp';
+    let wx = mx, wy = my;
+    if (fp) {
+      const forward = -my, strafe = mx;
+      wx = Math.cos(this.fpYaw) * forward - Math.sin(this.fpYaw) * strafe;
+      wy = Math.sin(this.fpYaw) * forward + Math.cos(this.fpYaw) * strafe;
+    }
     const wantRun = (this.keys['ShiftLeft'] || this.keys['ShiftRight'] || this.touchRun) && !p.crouching;
     let running = wantRun && p.stamina > 1 && moving;
     let speed = p.crouching ? PLAYER_BASE.crouchSpeed : (running ? PLAYER_BASE.runSpeed : PLAYER_BASE.speed);
@@ -863,19 +980,21 @@ export class Game {
     if (p.stamina <= 0) running = false;
 
     if (moving) {
-      const nx = p.x + mx * speed * dt;
-      const ny = p.y + my * speed * dt;
+      const nx = p.x + wx * speed * dt;
+      const ny = p.y + wy * speed * dt;
       if (this.world.canMove(nx, p.y, p.r)) p.x = nx;
       if (this.world.canMove(p.x, ny, p.r)) p.y = ny;
       p.walkPhase += dt * (running ? 13 : p.crouching ? 5 : 8.5);
-      p.facingX = mx;
-      p.facingY = my;
-      if (!this.mouse.active) p.aimAngle = Math.atan2(my, mx);
+      p.facingX = wx;
+      p.facingY = wy;
+      if (!fp && !this.mouse.active) p.aimAngle = Math.atan2(wy, wx);
     }
     p.moving = moving;
     p.running = running;
 
-    if (!this.mouse.active || this.time - this.mouse.lastMove > 2.5) {
+    if (fp) {
+      p.aimAngle = this.fpYaw;
+    } else if (!this.mouse.active || this.time - this.mouse.lastMove > 2.5) {
       /* aim assist / last direction */
       let best = null, bd = 250;
       for (const z of this.zombies) {
@@ -884,7 +1003,7 @@ export class Game {
         if (d < bd) { bd = d; best = z; }
       }
       if (best) p.aimAngle = angleTo(p.x, p.y - 5, best.x, best.y - 5);
-      else if (moving) p.aimAngle = Math.atan2(my, mx);
+      else if (moving) p.aimAngle = Math.atan2(wy, wx);
     } else {
       p.aimAngle = angleTo(p.x, p.y - 5, this.mouse.x, this.mouse.y);
     }
@@ -915,7 +1034,7 @@ export class Game {
     if (p.health <= 0 && !this.ended) {
       this.die(p.bleed > 0 ? 'Bled out in the dead zone' : p.hunger <= 0 ? 'Starved to death' : p.thirst <= 0 ? 'Died of dehydration' : 'Succumbed to your wounds');
     }
-    if (this.usingTouch) this.updateMouseAutoAim();
+    if (this.usingTouch && !fp) this.updateMouseAutoAim();
   }
 
   updateMouseAutoAim() {
@@ -1182,6 +1301,11 @@ export class Game {
 
   updateCamera(dt) {
     const p = this.player;
+    if (this.viewMode === 'fp') {
+      this.camera.x = p.x;
+      this.camera.y = p.y;
+      return;
+    }
     const lookX = Math.cos(p.aimAngle) * 18;
     const lookY = Math.sin(p.aimAngle) * 14;
     const tx = p.x + lookX;
@@ -1234,6 +1358,11 @@ export class Game {
     const sy = this.camera.y + (shake ? (Math.random() - 0.5) * shake : 0);
     ctx.save();
     ctx.clearRect(0, 0, w, h);
+    if (this.viewMode === 'fp') {
+      this.firstPerson.render(ctx, w, h);
+      ctx.restore();
+      return;
+    }
     ctx.translate(Math.round(w / 2 - sx), Math.round(h / 2 - sy));
 
     const left = sx - w / 2 - TILE * 2, right = sx + w / 2 + TILE * 2;
@@ -1579,6 +1708,7 @@ export class Game {
       primary: this.equipment.primary ? ITEMS[this.equipment.primary.id].name : null,
       raidTime: this.raidTime, raidMax: this.raidMax, overrun: this.overrun,
       zone: this.zone.name, zoneId: this.zoneId, level: this.save.player.level,
+      view: this.viewMode,
       kills: this.stats.kills, xp: this.save.player.xp, day: this.save.day,
       extraction: this.extractionState ? {
         progress: this.extractionState.progress, duration: this.extractionState.duration,

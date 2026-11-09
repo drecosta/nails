@@ -110,6 +110,7 @@ export class HUD {
     this.hotMelee = $('hot-melee');
     this.hotHeal = $('hot-heal');
     this.btnCrouch = $('btn-crouch');
+    this.btnView = $('btn-view');
     this.kills = $('hud-kills');
     this.minimap = $('minimap');
     this.last = null;
@@ -170,6 +171,12 @@ export class HUD {
     if (this.hotPrimary) this.hotPrimary.classList.toggle('active', p.mode === 'primary');
     if (this.hotMelee) this.hotMelee.classList.toggle('active', p.mode === 'melee');
     if (this.btnCrouch) this.btnCrouch.classList.toggle('active', p.crouching);
+    if (this.btnView) {
+      this.btnView.textContent = p.view === 'fp' ? 'FP' : 'ISO';
+      this.btnView.classList.toggle('active', p.view === 'fp');
+      this.btnView.title = p.view === 'fp' ? 'First-person view — click or V for isometric' : 'Isometric view — click or V for first-person';
+      document.body.classList.toggle('first-person', p.view === 'fp');
+    }
 
     const chips = [];
     if (p.bleed > 0) chips.push(`<span class="chip bad">BLEEDING ×${p.bleed}</span>`);

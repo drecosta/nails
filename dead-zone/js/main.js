@@ -222,11 +222,12 @@ function showHelp() {
     <h3>CONTROLS — KEYBOARD + MOUSE</h3>
     <div class="keyrow"><kbd>WASD</kbd><span>Move · <b>Shift</b> sprint · <b>C</b> crouch</span></div>
     <div class="keyrow"><kbd>LMB</kbd><span>Fire / melee · mouse aims · <b>1</b>/<b>2</b> switch weapons</span></div>
+    <div class="keyrow"><kbd>V</kbd><span>Toggle first-person / isometric view · click the field to capture the mouse</span></div>
     <div class="keyrow"><kbd>E</kbd><span>Search, harvest, use beacon</span></div>
     <div class="keyrow"><kbd>R</kbd><span>Reload · <b>F</b> med · <b>G</b> eat · <b>H</b> drink</span></div>
     <div class="keyrow"><kbd>TAB</kbd><span>Field kit · <b>M</b> map · <b>Esc</b> pause</span></div>
     <h3>CONTROLS — TOUCH</h3>
-    <p>Use the left joystick to move. On the right: STRIKE attacks, USE interacts, RUN sprints, MED/EAT/DRINK appear in the kit, and KIT opens your inventory.</p>
+    <p>Use the left joystick to move. Drag anywhere on the field to look around in first-person. On the right: STRIKE attacks, USE interacts, RUN sprints, MED/EAT/DRINK appear in the kit, and KIT opens your inventory.</p>
     <h3>SURVIVAL</h3>
     <p>Watch health, stamina, hunger and thirst. Bleeding drains health. Shoot only when you can afford the noise. Zombies investigate gunshots and can call nearby dead. Crouching reduces detection.</p>
     <h3>CAMP</h3>
@@ -345,6 +346,10 @@ function startExpedition(zoneId) {
     inventory: openRaidInventory,
     map: openMap,
     loot: openLoot,
+    view: (mode) => {
+      if (save && save.settings) save.settings.view = mode;
+      if (save) saveGame(save);
+    },
     end: (type, data) => finishExpedition(type, data)
   });
   hud.show();
@@ -797,6 +802,7 @@ function bindHudButtons() {
     const el = $(id);
     if (el) el.addEventListener('click', (e) => { e.preventDefault(); fn(); });
   };
+  click('btn-view', () => { if (game && !game.ended) game.toggleViewMode(); });
   click('btn-inventory', () => { if (game && !game.ended) { resetTouchControls(); openRaidInventory(); } });
   click('btn-map', () => { if (game && !game.ended) { resetTouchControls(); openMap(); } });
   click('btn-pause', () => { if (game && !game.ended) { resetTouchControls(); openPause(); } });

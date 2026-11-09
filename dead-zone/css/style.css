@@ -115,6 +115,7 @@ canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
   pointer-events: auto;
 }
 .round-btn:hover { border-color: var(--accent); color: var(--accent2); }
+.round-btn.active { border-color: #8fa35d; color: #e0e6b5; background: rgba(44, 58, 33, .85); }
 kbd {
   display: inline-flex;
   align-items: center;
@@ -457,6 +458,8 @@ kbd {
 /* ================================ GAME ================================ */
 .game-screen { background: #080a08; }
 #game-canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+.first-person #game-canvas { cursor: crosshair; }
+.first-person #game-canvas:active { cursor: none; }
 .hud { position: absolute; inset: 0; pointer-events: none; z-index: 10; }
 .hud button, .hud .hud-hotbar, .hud .hud-mapbox { pointer-events: auto; }
 .hud-top {

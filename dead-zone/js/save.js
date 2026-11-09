@@ -96,7 +96,7 @@ export function newSave() {
     },
     field: starter.field,
     equipment: starter.equipment,
-    settings: { sound: true, shake: true }
+    settings: { sound: true, shake: true, view: 'iso' }
   };
 }
 
@@ -136,7 +136,7 @@ export function deserialize(raw) {
     },
     field: null,
     equipment: Equipment.fromJSON(raw.equipment),
-    settings: Object.assign({ sound: true, shake: true }, raw.settings || {})
+    settings: Object.assign({ sound: true, shake: true, view: 'iso' }, raw.settings || {})
   };
   const rows = storageRows(save);
   save.camp.storage.resize(baseStorage.cols, rows);
