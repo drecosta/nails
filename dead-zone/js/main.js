@@ -853,6 +853,7 @@ function bindGlobal() {
       autoPaused = false;
       if (game && !game.ended && !modal.isOpen) game.setPaused(false);
     }
+    if (campUI) campUI.syncLoop();
   });
   setInterval(() => {
     if (save && campUI && !screenCamp.classList.contains('hidden') && !modal.isOpen) saveGame(save);

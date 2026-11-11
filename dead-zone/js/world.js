@@ -650,10 +650,16 @@ export class World {
 
   markExplored(x, y, radius = 9) {
     const tx = Math.floor(x / TILE), ty = Math.floor(y / TILE);
+    if (this._exploreTx === tx && this._exploreTy === ty && this._exploreRadius === radius) return;
+    this._exploreTx = tx;
+    this._exploreTy = ty;
+    this._exploreRadius = radius;
+    const r2 = radius * radius;
     for (let yy = ty - radius; yy <= ty + radius; yy++) {
       for (let xx = tx - radius; xx <= tx + radius; xx++) {
         if (!this.inBounds(xx, yy)) continue;
-        if (dist(xx, yy, tx, ty) <= radius) this.explored[this.idx(xx, yy)] = 1;
+        const dx = xx - tx, dy = yy - ty;
+        if (dx * dx + dy * dy <= r2) this.explored[this.idx(xx, yy)] = 1;
       }
     }
     /* discover extraction */

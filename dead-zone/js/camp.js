@@ -52,22 +52,40 @@ export class CampUI {
     this.visible = true;
     this.screen.classList.remove('hidden');
     this.refresh();
+    this.startLoop();
+  }
+  hide() {
+    this.visible = false;
+    this.screen.classList.add('hidden');
+    this.stopLoop();
+  }
+
+  syncLoop() {
+    if (this.visible && this.active === 'overview' && !document.hidden) this.startLoop();
+    else this.stopLoop();
+  }
+
+  startLoop() {
+    this.stopLoop();
+    if (!this.visible || this.active !== 'overview' || document.hidden) return;
     this.last = performance.now();
     const loop = (now) => {
-      if (!this.visible) return;
+      if (!this.visible || this.active !== 'overview' || document.hidden) {
+        this.raf = null;
+        return;
+      }
       const dt = Math.min(0.05, (now - this.last) / 1000);
       this.last = now;
       this.time += dt;
       this.drawCamp();
       this.raf = requestAnimationFrame(loop);
     };
-    cancelAnimationFrame(this.raf);
     this.raf = requestAnimationFrame(loop);
   }
-  hide() {
-    this.visible = false;
-    this.screen.classList.add('hidden');
-    cancelAnimationFrame(this.raf);
+
+  stopLoop() {
+    if (this.raf) cancelAnimationFrame(this.raf);
+    this.raf = null;
   }
 
   setTab(tab) {
@@ -80,6 +98,7 @@ export class CampUI {
       if (panel) panel.classList.toggle('hidden', t !== tab);
     }
     this.renderTab();
+    this.syncLoop();
     audio.ui();
   }
 

@@ -18,6 +18,7 @@ import {
 import { audio } from './audio.js';
 
 const HIT = 0.5;
+const GROUND_CHUNK = 8;
 
 export class Game {
   constructor(canvas, save, zoneId, callbacks) {
@@ -76,6 +77,7 @@ export class Game {
     this.frame = 0;
     this.paused = false;
     this.ended = false;
+    this._needsRender = true;
     this.stats = { kills: 0, xp: 0, shots: 0, looted: 0 };
     this.action = null;
     this.extractionState = null;
@@ -106,6 +108,7 @@ export class Game {
     this.lookLastY = 0;
     if (this.viewMode === 'fp') this.player.aimAngle = this.fpYaw;
     this.firstPerson = new FirstPersonRenderer(this);
+    this.groundChunks = new Map();
 
     /* gear-derived flags */
     this.radio = this.equipment.utility && ITEMS[this.equipment.utility.id].tool === 'radio';
@@ -166,6 +169,10 @@ export class Game {
     window.removeEventListener('resize', this._onResize);
     this.canvas.removeEventListener('contextmenu', this._onContext);
     this.releaseLookLock();
+    if (this.firstPerson) this.firstPerson.clear();
+    this.firstPerson = null;
+    this.groundChunks.clear();
+    this.groundChunks = null;
   }
 
   toast(text, tone = 'info') { if (this.callbacks.toast) this.callbacks.toast(text, tone); }
@@ -187,6 +194,7 @@ export class Game {
     this.viewW = this.canvas.width;
     this.viewH = this.canvas.height;
     this.ctx.imageSmoothingEnabled = false;
+    this._needsRender = true;
   }
 
   spawnInitialZombies() {
@@ -937,11 +945,21 @@ export class Game {
   loop(now) {
     const dtRaw = (now - this.lastTime) / 1000;
     this.lastTime = now;
+    if (document.hidden) {
+      this.raf = requestAnimationFrame(this._loop);
+      return;
+    }
     const dt = Math.min(0.05, Math.max(0, dtRaw));
-    this.time += dt;
-    this.frame++;
-    if (!this.paused && !this.ended) this.update(dt);
-    this.render();
+    if (!this.paused && !this.ended) {
+      this.time += dt;
+      this.frame++;
+      this.update(dt);
+      this.render();
+      this._needsRender = false;
+    } else if (this._needsRender) {
+      this.render();
+      this._needsRender = false;
+    }
     this.raf = requestAnimationFrame(this._loop);
   }
 
@@ -1206,8 +1224,13 @@ export class Game {
           let sepX = 0, sepY = 0;
           for (const o of this.zombies) {
             if (o === z || o.dead) continue;
-            const od = dist(z.x, z.y, o.x, o.y);
-            if (od < 14 && od > 0.01) { sepX += (z.x - o.x) / od; sepY += (z.y - o.y) / od; }
+            const sx = z.x - o.x, sy = z.y - o.y;
+            if (sx > 14 || sx < -14 || sy > 14 || sy < -14) continue;
+            const od2 = sx * sx + sy * sy;
+            if (od2 < 196 && od2 > 0.0001) {
+              const od = Math.sqrt(od2);
+              sepX += sx / od; sepY += sy / od;
+            }
           }
           dx += sepX * 0.35; dy += sepY * 0.35;
           const dl = Math.hypot(dx, dy) || 1;
@@ -1258,13 +1281,10 @@ export class Game {
     const base = Math.atan2(dy, dx);
     const side = z.variant % 2 ? 1 : -1;
     const offsets = [0];
-    if (z.avoidDir) offsets.push(z.avoidDir);
-    for (const off of [0.55, -0.55, 1.05, -1.05, 1.55, -1.55]) offsets.push(off * side);
-    const seen = new Set();
+    const addOffset = (off) => { if (!offsets.includes(off)) offsets.push(off); };
+    if (z.avoidDir) addOffset(z.avoidDir);
+    for (const off of [0.55, -0.55, 1.05, -1.05, 1.55, -1.55]) addOffset(off * side);
     for (const off of offsets) {
-      const key = off.toFixed(3);
-      if (seen.has(key)) continue;
-      seen.add(key);
       const a = base + off;
       const sx = Math.cos(a) * step;
       const sy = Math.sin(a) * step;
@@ -1406,9 +1426,13 @@ export class Game {
     const ty0 = Math.max(0, Math.floor(top / TILE)), ty1 = Math.min(this.world.rows - 1, Math.ceil(bottom / TILE));
 
     /* ground */
-    for (let ty = ty0; ty <= ty1; ty++) {
-      for (let tx = tx0; tx <= tx1; tx++) {
-        this.drawTile(ctx, tx, ty);
+    const cx0 = Math.floor(tx0 / GROUND_CHUNK), cx1 = Math.floor(tx1 / GROUND_CHUNK);
+    const cy0 = Math.floor(ty0 / GROUND_CHUNK), cy1 = Math.floor(ty1 / GROUND_CHUNK);
+    for (let cy = cy0; cy <= cy1; cy++) {
+      for (let cx = cx0; cx <= cx1; cx++) {
+        const chunk = this.groundChunk(cx, cy);
+        ctx.drawImage(chunk.canvas, chunk.tx0 * TILE, chunk.ty0 * TILE);
+        for (const [tx, ty] of chunk.water) this.drawTile(ctx, tx, ty);
       }
     }
 
@@ -1533,6 +1557,34 @@ export class Game {
       ctx.fillStyle = 'rgba(150,30,25,' + (this.player.hurtFlash * 0.5) + ')';
       ctx.fillRect(0, 0, w, h);
     }
+  }
+
+  groundChunk(cx, cy) {
+    const key = cx + ':' + cy;
+    let chunk = this.groundChunks.get(key);
+    if (chunk) return chunk;
+    const size = GROUND_CHUNK * TILE;
+    const canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    const c = canvas.getContext('2d');
+    if (c) c.imageSmoothingEnabled = false;
+    const tx0 = cx * GROUND_CHUNK, ty0 = cy * GROUND_CHUNK;
+    const water = [];
+    const tx1 = Math.min(this.world.cols - 1, tx0 + GROUND_CHUNK - 1);
+    const ty1 = Math.min(this.world.rows - 1, ty0 + GROUND_CHUNK - 1);
+    if (c) {
+      c.translate(-tx0 * TILE, -ty0 * TILE);
+      for (let ty = ty0; ty <= ty1; ty++) {
+        for (let tx = tx0; tx <= tx1; tx++) {
+          this.drawTile(c, tx, ty);
+          if (this.world.tileAt(tx, ty) === T.WATER) water.push([tx, ty]);
+        }
+      }
+    }
+    chunk = { canvas, tx0, ty0, water };
+    this.groundChunks.set(key, chunk);
+    return chunk;
   }
 
   drawTile(ctx, tx, ty) {

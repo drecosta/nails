@@ -411,6 +411,18 @@ export class FirstPersonRenderer {
     this.zBuffer = null;
   }
 
+  clear() {
+    this.sprites.clear();
+    this.ground.clear();
+    this.floorCanvas = null;
+    this.floorCtx = null;
+    this.floorImage = null;
+    this.floorPixels = null;
+    this.floorW = 0;
+    this.floorH = 0;
+    this.zBuffer = null;
+  }
+
   sprite(key, w, h, draw) {
     const k = key + ':' + Math.round(w) + 'x' + Math.round(h);
     let c = this.sprites.get(k);
@@ -633,7 +645,7 @@ export class FirstPersonRenderer {
       const pr = this.project(x, y, view);
       if (pr.depth < 3 || pr.depth > 300) return;
       if (Math.abs(pr.lateral) > pr.depth * view.tanHalf + 70) return;
-      list.push({ x, y, depth: pr.depth, wWorld, hWorld, sprite, kind, data });
+      list.push({ x, y, depth: pr.depth, lateral: pr.lateral, wWorld, hWorld, sprite, kind, data });
     };
 
     for (const e of world.extractions) {
@@ -706,7 +718,7 @@ export class FirstPersonRenderer {
 
     list.sort((a, b) => b.depth - a.depth);
     for (const o of list) {
-      const screenX = view.w / 2 + (this.project(o.x, o.y, view).lateral / o.depth) * view.focal + view.shakeX;
+      const screenX = view.w / 2 + (o.lateral / o.depth) * view.focal + view.shakeX;
       const baseY = view.horizon + view.camH * view.focal / o.depth + view.shakeY;
       const screenH = o.hWorld * view.focal / o.depth;
       const screenW = o.wWorld * view.focal / o.depth;
