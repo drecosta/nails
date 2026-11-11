@@ -3,17 +3,17 @@
 import {
   ITEMS, ZONES, ZOMBIE_TYPES, PLAYER_BASE, CORPSE_LOOT
 } from './data.js';
-import { World, TILE, TILE_INFO, T, WORLD_PX } from './world.js';
+import { World, TILE, TILE_INFO, T } from './world.js';
 import {
   Inventory, createItem, weaponStats, magSize, armorValue, fieldRows,
-  reloadWeaponFrom, defOf
+  reloadWeaponFrom
 } from './inventory.js';
 import { maxHealth, maxStamina } from './save.js';
-import { drawPlayer, drawZombie, drawTree, drawRock, drawContainer, drawExtraction, shade } from './sprites.js';
+import { drawPlayer, drawZombie, drawTree, drawRock, drawContainer, drawExtraction } from './sprites.js';
 import { FirstPersonRenderer } from './firstperson.js';
 import {
-  clamp, dist, angleTo, normAngle, randInt, randRange, pick, weightedPick,
-  mulberry32, hash2, fmtTime, segmentRect
+  clamp, dist, angleTo, normAngle, randInt, randRange, weightedPick,
+  mulberry32, hash2
 } from './util.js';
 import { audio } from './audio.js';
 
@@ -1477,7 +1477,6 @@ export class Game {
     for (const d of list) d.draw();
 
     /* melee arc */
-    if (this.player.attackAnim > 0 && this.currentWeapon() && !ITEMS[this.currentWeapon().id].weapon) { /* noop */ }
     const cur = this.currentWeapon();
     if (cur && ITEMS[cur.id].weapon && ITEMS[cur.id].weapon.kind === 'melee' && this.player.attackAnim > 0) {
       ctx.save();

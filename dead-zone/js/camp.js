@@ -1,9 +1,7 @@
 /* DEAD ZONE — permanent camp, crafting, building, deployment */
 
-import { BUILDINGS, RECIPES, ITEMS, ZONES, ZONE_ORDER, PLAYER_BASE, baseStorage } from './data.js';
-import {
-  Inventory, createItem, fieldRows, bagRows
-} from './inventory.js';
+import { BUILDINGS, RECIPES, ITEMS, ZONES, ZONE_ORDER, baseStorage } from './data.js';
+import { createItem } from './inventory.js';
 import {
   xpToNext, storageRows, campDefense, saveGame, quickLoadout,
   maxHealth, maxStamina

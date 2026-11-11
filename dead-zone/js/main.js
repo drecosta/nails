@@ -10,7 +10,7 @@ import { ModalManager, HUD, Toasts, InventoryScreen, itemIconCanvas } from './ui
 import { CampUI } from './camp.js';
 import { Game } from './game.js';
 import { audio } from './audio.js';
-import { fmtTime, clamp } from './util.js';
+import { fmtTime } from './util.js';
 
 const $ = (id) => document.getElementById(id);
 const isTouch = window.matchMedia('(pointer: coarse)').matches || navigator.maxTouchPoints > 0;

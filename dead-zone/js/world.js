@@ -1,7 +1,7 @@
 /* DEAD ZONE — procedural expedition maps */
 
-import { LOOT, CORPSE_LOOT, CONTAINERS, ZONE_LOOT_BONUS, ZONES, ZOMBIE_TYPES, ITEMS } from './data.js';
-import { Inventory, createItem, weaponStats, magSize } from './inventory.js';
+import { LOOT, CONTAINERS, ZONE_LOOT_BONUS, ZONES, ITEMS } from './data.js';
+import { Inventory, createItem, magSize } from './inventory.js';
 import { mulberry32, randInt, randRange, pick, weightedPick, dist, clamp, hash2, shuffle } from './util.js';
 
 export const TILE = 16;
